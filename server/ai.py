@@ -46,6 +46,10 @@ async def ask(request: AIQuestion):
             return response
     except (ModelUnavailable,TimeoutError) as exc:
         reason=exc.reason if isinstance(exc,ModelUnavailable) else 'deadline'
+        if reason=='question_mismatch':
+            response=outcome('question_mismatch',request.lang,'clarify')
+            response['elapsed_ms']=round((time.monotonic()-started)*1000)
+            return response
         try:
             fallback=local_count_plan(request) or local_chronology_plan(request)
             if fallback: fallback=constrain_request(request,fallback)
@@ -54,10 +58,6 @@ async def ask(request: AIQuestion):
         if fallback:
             response=await asyncio.to_thread(execute_plan,fallback,request)
             response['provider']={'kind':'local','model':'verified-count' if fallback.metric=='count' else 'verified-chronology','attempts':0,'used_backup':True}
-            response['elapsed_ms']=round((time.monotonic()-started)*1000)
-            return response
-        if reason=='question_mismatch':
-            response=outcome('question_mismatch',request.lang,'clarify')
             response['elapsed_ms']=round((time.monotonic()-started)*1000)
             return response
         answer=('AI-аналитик ещё не подключён к ключам среды. Поиск и готовые отчёты доступны.' if reason=='not_configured' else 'Модели временно недоступны: исчерпан лимит или произошёл сбой. Поиск и готовые отчёты доступны. Это не означает, что ответа нет в данных.') if request.lang=='ru' else ('AI-tahlilchi muhit kalitlariga hali ulanmagan. Qidiruv va tayyor hisobotlar mavjud.' if reason=='not_configured' else 'Modellar vaqtincha mavjud emas: limit tugagan yoki nosozlik yuz bergan. Qidiruv va tayyor hisobotlar mavjud. Bu ma’lumotlarda javob yo‘qligini anglatmaydi.')
