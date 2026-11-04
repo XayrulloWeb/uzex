@@ -39,6 +39,30 @@ with sync_playwright() as p:
     page.screenshot(path=str(OUT/'desktop.png'),full_page=True)
     record('Desktop initial data, 3D scene and layout')
 
+    configured=page.request.get(BASE+'/api/ai/status').json()['configured']
+    ai_input=page.get_by_role('textbox',name='Вопрос AI-аналитику',exact=True)
+    ai_input.fill('Сколько всего сделок в 2024 году?')
+    page.get_by_role('button',name='Спросить AI',exact=True).click()
+    expect(page.locator('.ai-answer')).to_contain_text('106',timeout=85000)
+    assert digits(page.locator('.ai-answer .report-table tbody td').first)=='106647'
+    page.get_by_role('button',name='Доказательства и расчёт',exact=True).click()
+    expect(page.locator('.ai-answer .sources-panel pre')).to_contain_text('year(deal_date)=?')
+    if not configured: expect(page.locator('.ai-answer .sources-panel')).to_contain_text('Локальный проверенный расчёт')
+    record('AI UI returns grounded 2024 count and reproducible SQL')
+    ai_input.fill('Сколько всего сделок было в 2027 году?')
+    page.get_by_role('button',name='Спросить AI',exact=True).click()
+    expect(page.locator('.ai-no_data')).to_be_visible(timeout=10000)
+    assert page.locator('.ai-answer tbody tr').count()==0
+    page.locator('#ask-ai').scroll_into_view_if_needed()
+    page.screenshot(path=str(OUT/'ai-guardrails.png'),full_page=False)
+    record('AI UI refuses absent 2027 data instead of fabricating zero or other years')
+    if not configured:
+        ai_input.fill('Покажи крупнейших покупателей цемента за 2024 год')
+        page.get_by_role('button',name='Спросить AI',exact=True).click()
+        expect(page.locator('.ai-unavailable')).to_be_visible(timeout=10000)
+        expect(page.locator('.ai-unavailable')).to_contain_text('ещё не подключён')
+        record('Missing Gemini credentials are a service error, not missing data')
+
     page.get_by_role('button',name='Всё время',exact=True).click()
     expect(page.locator('.metric-value').nth(1)).to_contain_text('500')
     assert digits(page.locator('.metric-value').nth(1))=='500000'
@@ -155,5 +179,5 @@ with sync_playwright() as p:
     record('No uncaught browser JavaScript errors')
     browser.close()
 
-(OUT/'browser-results.json').write_text(json.dumps({'run_at':datetime.now(timezone.utc).isoformat(),'target':BASE,'passed':len(CHECKS),'checks':CHECKS},ensure_ascii=False,indent=2)+'\n')
+(OUT/'browser-results.json').write_text(json.dumps({'run_at':datetime.now(timezone.utc).isoformat(),'target':BASE,'passed':len(CHECKS),'gemini_live_configured':configured,'checks':CHECKS},ensure_ascii=False,indent=2)+'\n')
 print(f'{len(CHECKS)} browser scenarios passed.',flush=True)

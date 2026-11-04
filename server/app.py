@@ -7,6 +7,7 @@ from fastapi.staticfiles import StaticFiles
 
 from server.analytics import Scope, catalog, deal, registry, report, summary
 from server.db import ROOT, query
+from server.ai import router as ai_router
 
 
 @asynccontextmanager
@@ -16,11 +17,13 @@ async def lifespan(app):
 
 
 app = FastAPI(title='UZEX Observatory', version='0.1.0', lifespan=lifespan)
+app.include_router(ai_router)
 
 
 @app.get('/api/health')
 def health():
-    return {'status': 'ok', 'deals': query('SELECT count(*) count FROM trades')[0]['count'], 'ai_enabled': False}
+    from server.gemini import get_pool
+    return {'status': 'ok', 'deals': query('SELECT count(*) count FROM trades')[0]['count'], 'ai_enabled': get_pool().configured}
 
 
 @app.get('/api/catalog')

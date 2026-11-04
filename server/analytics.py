@@ -101,11 +101,12 @@ def deal(identity: int):
 
 
 def catalog():
+    from server.gemini import get_pool
     return {
         'regions': [{'id': r[0], 'raw': r[1], 'ru': r[2], 'uz': r[3], 'lng': r[4], 'lat': r[5]} for r in REGIONS],
         'commodities': [{'id': c[0], 'code': c[1], 'ru': c[2], 'uz': c[3]} for c in COMMODITIES],
         'years': [2022,2023,2024,2025,2026], 'snapshot': SNAPSHOT, 'total_deals': 500000,
-        'engine': 'local', 'ai_enabled': False,
+        'engine': 'local', 'ai_enabled': get_pool().configured,
     }
 
 

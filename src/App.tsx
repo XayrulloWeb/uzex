@@ -29,6 +29,7 @@ import {
 import type { Catalog, DealDetail, Lang, Overview, Registry, Report, Scope } from './types';
 import { api, compact, csvDownload, dateLabel, exact, integer, params, STATUS_UZ } from './lib';
 import Chart from './Chart';
+import AITerminal from './AITerminal';
 
 const MapScene = lazy(() => import('./MapScene'));
 const initialScope: Scope = { year: 2026, region: '', commodity: '', status: 'all' };
@@ -1034,6 +1035,12 @@ export default function App() {
                         </button>
                       </div>
                     </section>
+                    <AITerminal
+                      lang={lang}
+                      scope={scope}
+                      contextLabel={scopeLabel}
+                      onDeal={(id) => void openDeal(id)}
+                    />
                     <section className="explorer-section">
                       <div className="explorer-copy">
                         <span className="eyebrow dark">
@@ -1222,8 +1229,8 @@ export default function App() {
                   [
                     t('Автономная версия', 'Avtonom versiya'),
                     t(
-                      'Фильтры, поиск и готовые отчёты работают по локальной базе. Языковой AI-агент будет подключён отдельным этапом.',
-                      'Filtrlar, qidiruv va tayyor hisobotlar mahalliy baza bilan ishlaydi. Tilga asoslangan AI-agent alohida bosqichda ulanadi.',
+                      'Фильтры, поиск и отчёты работают по локальной базе. Gemini разбирает вопрос в план; расчёты выполняются сервером. Если модели недоступны, это сообщается отдельно от отсутствия данных.',
+                      'Filtrlar, qidiruv va hisobotlar mahalliy baza bilan ishlaydi. Gemini savolni rejaga aylantiradi; hisob-kitoblar serverda bajariladi. Model nosozligi ma’lumot yo‘qligidan alohida ko‘rsatiladi.',
                     ),
                   ],
                 ].map(([a, b], i) => (
