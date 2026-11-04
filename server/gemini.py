@@ -8,11 +8,19 @@ import re
 import threading
 import time
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 import httpx
 
 from server.question_checks import QuestionMismatch
+
+_env_file = Path(__file__).resolve().parents[1] / '.env'
+if _env_file.exists():
+    for _line in _env_file.read_text(encoding='utf-8').splitlines():
+        if '=' in _line and not _line.strip().startswith('#'):
+            _k, _v = _line.strip().split('=', 1)
+            os.environ.setdefault(_k.strip(), _v.strip())
 
 API = 'https://generativelanguage.googleapis.com/v1beta'
 DEFAULT_MODELS = ['gemini-flash-lite-latest', 'gemini-3.1-flash-lite', 'gemini-3.5-flash', 'gemini-3.8-flash', 'gemini-2.5-flash']
