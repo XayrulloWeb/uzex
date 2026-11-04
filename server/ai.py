@@ -17,7 +17,7 @@ router=APIRouter(prefix='/api/ai',tags=['AI analyst'])
 @router.get('/status')
 def status():
     pool=get_pool()
-    return {'provider':'gemini','configured':pool.configured,'models':pool.models,'backup_keys':max(0,len(pool.keys)-1),'response_budget_seconds':80}
+    return {'provider':'groq+gemini' if pool.groq_key else 'gemini','configured':pool.configured,'models':(pool.groq_models if pool.groq_key else []) + pool.models,'backup_keys':max(0,len(pool.keys)-1),'response_budget_seconds':80}
 
 
 @router.post('/ask')
