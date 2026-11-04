@@ -38,12 +38,12 @@ def build_database(raw: Path | None = None, database: Path | None = None, force=
     names = [f'deals_{y}.csv' for y in YEARS] + ['contracts.csv', 'participants.csv', 'brokers.csv', 'usd_rates.csv']
     raw = raw or Path(os.environ.get('UZEX_DATA_DIR', ROOT / 'data/raw'))
     hashes = {name: file_hash(raw / name) for name in names}
-    expected = json.loads((ROOT / 'docs/data-audit.json').read_text())
+    expected = json.loads((ROOT / 'docs/data-audit.json').read_text(encoding='utf-8'))
     for name, value in hashes.items():
         if value != expected['source_files'][name]['sha256']:
             raise ValueError(f'Checksum mismatch for {name}; re-audit changed source data before import.')
     if database.exists() and manifest_path.exists() and not force:
-        old = json.loads(manifest_path.read_text())
+        old = json.loads(manifest_path.read_text(encoding='utf-8'))
         if old.get('schema_version') == SCHEMA_VERSION and old.get('sha256') == hashes:
             print('Verified existing database:', database)
             return database

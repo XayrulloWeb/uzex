@@ -1,3 +1,13 @@
+import os
+from pathlib import Path
+
+env_file = Path(__file__).resolve().parents[1] / '.env'
+if env_file.exists():
+    for line in env_file.read_text(encoding='utf-8').splitlines():
+        if '=' in line and not line.strip().startswith('#'):
+            k, v = line.strip().split('=', 1)
+            os.environ.setdefault(k.strip(), v.strip())
+
 from contextlib import asynccontextmanager
 from typing import Literal
 

@@ -11,7 +11,7 @@ from server.app import app
 from server.analytics import Scope, summary
 from server.db import query
 
-REFERENCES={x['id']:x['expected'] for x in json.loads((Path(__file__).parents[1]/'docs/reference-questions.json').read_text())['questions']}
+REFERENCES={x['id']:x['expected'] for x in json.loads((Path(__file__).parents[1]/'docs/reference-questions.json').read_text(encoding='utf-8'))['questions']}
 client=TestClient(app)
 
 

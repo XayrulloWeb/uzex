@@ -14,7 +14,7 @@ from server.ai_models import AIQuestion,QueryPlan
 from server.app import app
 from server.gemini import GeminiPool,ModelUnavailable
 
-REF={q['id']:q['expected'] for q in json.loads((Path(__file__).parents[1]/'docs/reference-questions.json').read_text())['questions']}
+REF={q['id']:q['expected'] for q in json.loads((Path(__file__).parents[1]/'docs/reference-questions.json').read_text(encoding='utf-8'))['questions']}
 
 
 def generated(plan=None):
