@@ -17,7 +17,11 @@ router=APIRouter(prefix='/api/ai',tags=['AI analyst'])
 @router.get('/status')
 def status():
     pool=get_pool()
-    return {'provider':'groq+gemini' if pool.groq_key else 'gemini','configured':pool.configured,'models':(pool.groq_models if pool.groq_key else []) + pool.models,'backup_keys':max(0,len(pool.keys)-1),'response_budget_seconds':80}
+    return {'provider':'gemini+groq' if pool.groq.configured else 'gemini','configured':pool.configured,
+            'models':pool.models+(pool.groq.models if pool.groq.configured else []),
+            'providers':[{'provider':'gemini','configured':bool(pool.keys),'models':pool.models},
+                         {'provider':'groq','configured':pool.groq.configured,'models':pool.groq.models}],
+            'backup_keys':max(0,len(pool.keys)-1),'response_budget_seconds':80}
 
 
 @router.post('/ask')
@@ -41,7 +45,8 @@ async def ask(request: AIQuestion):
             def validate(text):
                 payload=json.loads(text)
                 if isinstance(payload, list):
-                    payload = payload[0] if payload else {}
+                    if len(payload)!=1: raise QuestionMismatch('multiple_plans')
+                    payload = payload[0]
                 if isinstance(payload,dict) and payload.get('action','query')=='query' and 'metric' not in payload:
                     raise ValueError('Model must explicitly choose a metric')
                 return constrain_request(request,QueryPlan.model_validate(payload))

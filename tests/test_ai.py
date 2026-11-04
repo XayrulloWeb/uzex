@@ -266,3 +266,31 @@ def test_reference_cards_preserve_exact_lookup_evidence(metric,field,value):
     assert result['status']=='answer'
     assert result['provenance']['parameters']==[value]
     assert any(r['value']==value for r in result['rows'])
+
+
+def test_single_wrapped_model_plan_is_accepted(monkeypatch):
+    class Pool:
+        async def generate(self,system,question,validate):
+            return validate('[{"metric":"amount"}]'),{'model':'test-only','attempts':1,'used_backup':False}
+    monkeypatch.setattr('server.ai.get_pool',lambda:Pool())
+    body=TestClient(app).post('/api/ai/ask',json={'question':'Сумма сделок за 2024 год'}).json()
+    assert body['status']=='answer' and body['rows'][0]['deals']==106647
+
+
+def test_multiple_model_plans_are_not_silently_reduced_to_first(monkeypatch):
+    class Pool:
+        async def generate(self,system,question,validate):
+            return validate('[{"metric":"amount"},{"metric":"count"}]'),{'model':'test-only','attempts':1,'used_backup':False}
+    monkeypatch.setattr('server.ai.get_pool',lambda:Pool())
+    body=TestClient(app).post('/api/ai/ask',json={'question':'Сумма сделок за 2024 год'}).json()
+    assert body['status']=='clarify' and body['rows']==[]
+
+
+def test_explicit_provider_configuration_does_not_leak_a_key_from_environment(monkeypatch):
+    monkeypatch.setenv('UZEX_GROQ_KEY','test-only-key')
+    def forbidden(request): raise AssertionError('Cancelled provider must receive no request')
+    pool=GeminiPool(keys=[],transport=httpx.MockTransport(forbidden))
+    assert pool.configured is False
+    with pytest.raises(ModelUnavailable) as error:
+        asyncio.run(pool.generate('system','question',json.loads))
+    assert error.value.reason=='not_configured'

@@ -12,7 +12,12 @@ type AIResponse = {
   rows: Record<string, Cell>[];
   interpretation?: string[];
   elapsed_ms?: number;
-  provider?: { kind?: 'gemini' | 'local'; model: string; attempts: number; used_backup: boolean };
+  provider?: {
+    kind?: 'gemini' | 'groq' | 'local';
+    model: string;
+    attempts: number;
+    used_backup: boolean;
+  };
   provenance: null | {
     sql: string;
     parameters: unknown[];
@@ -145,7 +150,7 @@ export default function AITerminal({
           <h2>{t('Спросите рынок.', 'Bozordan so‘rang.')}</h2>
         </div>
         <span className="ai-provider">
-          GEMINI<span>RU + UZ</span>
+          AI<span>RU + UZ</span>
         </span>
       </div>
       <p className="ai-description">
@@ -336,12 +341,12 @@ export default function AITerminal({
                     <p>
                       {answer.provider.kind === 'local'
                         ? t('Локальный проверенный расчёт', 'Mahalliy tekshirilgan hisob-kitob')
-                        : `Gemini: ${answer.provider.model}`}
+                        : `${answer.provider.kind === 'groq' ? 'Groq' : 'Gemini'}: ${answer.provider.model}`}
                       {answer.provider.used_backup && answer.provider.kind !== 'local'
                         ? ' · ' +
                           t(
-                            'использована резервная модель или ключ',
-                            'zaxira model yoki kalit ishlatilgan',
+                            'использована резервная модель, ключ или провайдер',
+                            'zaxira model, kalit yoki provayder ishlatilgan',
                           )
                         : ''}
                     </p>

@@ -14,6 +14,8 @@ from typing import Any
 import httpx
 
 from server.question_checks import QuestionMismatch
+from server.provider_errors import ModelUnavailable
+from server.groq import GroqPool
 
 _env_file = Path(__file__).resolve().parents[1] / '.env'
 if _env_file.exists():
@@ -26,22 +28,17 @@ API = 'https://generativelanguage.googleapis.com/v1beta'
 DEFAULT_MODELS = ['gemini-flash-lite-latest', 'gemini-3.1-flash-lite', 'gemini-3.5-flash', 'gemini-3.8-flash', 'gemini-2.5-flash']
 
 
-class ModelUnavailable(Exception):
-    def __init__(self, reason='unavailable'):
-        self.reason = reason
-        super().__init__(reason)
-
-
 class GeminiPool:
-    def __init__(self, keys=None, models=None, transport=None, discover=True, budget=70.0, groq_key=None):
-        self.groq_key = groq_key if groq_key is not None else (os.getenv('UZEX_GROQ_KEY') if keys is None else None)
-        self.groq_models = [m.strip() for m in os.getenv('UZEX_GROQ_MODELS', 'qwen/qwen3.8-27b,openai/gpt-oss-120b').split(',') if m.strip()]
+    def __init__(self, keys=None, models=None, transport=None, discover=True, budget=70.0, groq_key=None, groq_models=None):
+        fallback_key=groq_key
+        if fallback_key is None and keys is None:fallback_key=os.getenv('UZEX_GROQ_KEY') or os.getenv('GROQ_API_KEY')
+        self.groq=GroqPool(key=fallback_key,models=groq_models,transport=transport,discover=discover)
         extra_keys = [k.strip() for k in os.getenv('UZEX_GEMINI_KEYS', '').split(',') if k.strip()]
         configured_keys = keys if keys is not None else ([os.getenv('UZEX_GEMINI_KEY_PRIMARY'), os.getenv('UZEX_GEMINI_KEY_BACKUP'), os.getenv('UZEX_GEMINI_KEY_3'), os.getenv('UZEX_GEMINI_KEY_4')] + extra_keys)
         self.keys = list(dict.fromkeys(k for k in configured_keys if k))
         configured_models = models or os.getenv('UZEX_GEMINI_MODELS', '').split(',')
         self.models = list(dict.fromkeys(m.strip() for m in configured_models if m.strip())) or DEFAULT_MODELS[:]
-        if any(not re.fullmatch(r'[A-Za-z0-9._/-]{1,100}', m) for m in self.models):
+        if any(not re.fullmatch(r'[A-Za-z0-9._-]{1,100}', m) for m in self.models):
             raise ValueError('Invalid Gemini model identifier')
         self.transport = transport
         self.discover = discover
@@ -54,13 +51,14 @@ class GeminiPool:
 
     @property
     def configured(self):
-        return bool(self.keys or self.groq_key)
+        return bool(self.keys or self.groq.configured)
 
     async def _discover(self, client, deadline):
         if not self.discover or time.monotonic() - self._discovered_at < 900:
             return
         self._discovered_at = time.monotonic()-840
         for index,key in enumerate(self.keys):
+            if time.monotonic()>=deadline:return
             if self.key_cooldown.get(index,0)>time.monotonic():continue
             try:
                 response = await client.get(API+'/models', headers={'x-goog-api-key': key}, timeout=min(4.0, max(.1, deadline-time.monotonic())))
@@ -94,7 +92,7 @@ class GeminiPool:
                 self.cooldown[index, model] = until
 
     async def generate(self, system: str, question: str, validate: Callable[[str], Any]):
-        if not self.keys and not self.groq_key:
+        if not self.configured:
             raise ModelUnavailable('not_configured')
         with self._lock:
             if self._active >= 4:
@@ -105,30 +103,18 @@ class GeminiPool:
         try:
             async with asyncio.timeout(self.budget):
                 deadline = time.monotonic()+self.budget
+                reserve=min(25.0,self.budget*.45) if self.groq.configured and self.keys else 0
+                gemini_deadline=deadline-reserve
                 async with httpx.AsyncClient(transport=self.transport, timeout=10.0, trust_env=True) as client:
-                    if self.groq_key:
-                        for g_model in self.groq_models:
-                            attempts += 1
-                            try:
-                                g_resp = await client.post('https://api.groq.com/openai/v1/chat/completions',
-                                    headers={'Authorization': f'Bearer {self.groq_key}', 'Content-Type': 'application/json'},
-                                    json={'model': g_model,
-                                          'messages': [{'role': 'system', 'content': system}, {'role': 'user', 'content': question}],
-                                          'response_format': {'type': 'json_object'},
-                                          'temperature': 0},
-                                    timeout=min(10.0, max(.1, deadline-time.monotonic())))
-                                if g_resp.status_code == 200:
-                                    g_text = g_resp.json()['choices'][0]['message']['content']
-                                    plan = validate(g_text)
-                                    return plan, {'model': g_model, 'attempts': attempts, 'used_backup': False, 'kind': 'groq'}
-                            except QuestionMismatch:
-                                question_mismatch = True
-                                continue
-                            except Exception:
-                                continue
-                    await self._discover(client, deadline)
+                    try:
+                        async with asyncio.timeout(max(.01,gemini_deadline-time.monotonic())):
+                            await self._discover(client, gemini_deadline)
+                    except TimeoutError:
+                        pass
                     for index, key in enumerate(self.keys):
+                        if time.monotonic()>=gemini_deadline:break
                         for model_index, model in enumerate(self.models):
+                            if time.monotonic()>=gemini_deadline:break
                             if not self._ready(index, model):
                                 continue
                             attempts += 1
@@ -138,12 +124,13 @@ class GeminiPool:
                                     generation['thinkingConfig']={'thinkingBudget':0}
                                 elif model.startswith('gemini-2.5-pro'):
                                     generation['thinkingConfig']={'thinkingBudget':128}
-                                response = await client.post(API+f'/models/{model}:generateContent',
-                                    headers={'x-goog-api-key': key},
-                                    json={'systemInstruction': {'parts': [{'text': system}]},
-                                          'contents': [{'role': 'user', 'parts': [{'text': question}]}],
-                                          'generationConfig': generation},
-                                    timeout=min(12.0, max(.1, deadline-time.monotonic())))
+                                async with asyncio.timeout(max(.01,gemini_deadline-time.monotonic())):
+                                    response = await client.post(API+f'/models/{model}:generateContent',
+                                        headers={'x-goog-api-key': key},
+                                        json={'systemInstruction': {'parts': [{'text': system}]},
+                                              'contents': [{'role': 'user', 'parts': [{'text': question}]}],
+                                              'generationConfig': generation},
+                                        timeout=min(12.0, max(.1, gemini_deadline-time.monotonic())))
                                 code = response.status_code
                                 invalid_api_key=False
                                 if code==400:
@@ -176,10 +163,20 @@ class GeminiPool:
                                 return value, {'model': model, 'attempts': attempts, 'used_backup': index > 0 or model_index > 0}
                             except httpx.TransportError:
                                 self._block(index, model, 15)
+                            except TimeoutError:
+                                break
                             except QuestionMismatch:
                                 question_mismatch = True
                             except (ValueError, KeyError, IndexError, TypeError, json.JSONDecodeError):
                                 self._block(index, model, 15)
+                if self.groq.configured and time.monotonic()<deadline:
+                    try:
+                        plan,provider=await self.groq.generate(system,question,validate,budget=deadline-time.monotonic())
+                        provider['attempts']+=attempts
+                        provider['used_backup']=bool(self.keys)
+                        return plan,provider
+                    except ModelUnavailable as exc:
+                        question_mismatch |= exc.reason=='question_mismatch'
             raise ModelUnavailable('question_mismatch' if question_mismatch else 'all_unavailable')
         except TimeoutError:
             raise ModelUnavailable('deadline') from None
