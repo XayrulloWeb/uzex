@@ -487,9 +487,31 @@ export default function App() {
             </thead>
             <tbody>
               {(preview ? registry?.rows.slice(0, 5) : registry?.rows)?.map((row) => (
-                <tr key={row.deal_id}>
+                <tr
+                  key={row.deal_id}
+                  className="deal-row"
+                  onClick={() => void openDeal(row.deal_id)}
+                  tabIndex={0}
+                  role="button"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      void openDeal(row.deal_id);
+                    }
+                  }}
+                  aria-label={t(
+                    `Сделка #${row.deal_id}: ${row.product_label}`,
+                    `#${row.deal_id} bitim: ${row.product_label}`,
+                  )}
+                >
                   <td>
-                    <button className="deal-link" onClick={() => void openDeal(row.deal_id)}>
+                    <button
+                      className="deal-link"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void openDeal(row.deal_id);
+                      }}
+                    >
                       #{row.deal_id}
                     </button>
                     <span className="table-sub">{dateLabel(row.deal_date, lang)}</span>
@@ -521,7 +543,10 @@ export default function App() {
                   <td>
                     <button
                       className="row-open"
-                      onClick={() => void openDeal(row.deal_id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void openDeal(row.deal_id);
+                      }}
                       aria-label={t(
                         `Открыть сделку ${row.deal_id}`,
                         `${row.deal_id} bitimni ochish`,

@@ -272,24 +272,38 @@ export default function AITerminal({
                     </tr>
                   </thead>
                   <tbody>
-                    {answer.rows.map((row, i) => (
-                      <tr key={i}>
-                        {answer.columns.map((c) => (
-                          <td key={c.key}>
-                            {c.key === 'deal_id' && row[c.key] ? (
-                              <button
-                                className="deal-link"
-                                onClick={() => onDeal(Number(row[c.key]))}
-                              >
-                                #{String(row[c.key])}
-                              </button>
-                            ) : (
-                              formatCell(row[c.key], c.kind)
-                            )}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
+                    {answer.rows.map((row, i) => {
+                      const dealId = row.deal_id ? Number(row.deal_id) : null;
+                      return (
+                        <tr
+                          key={i}
+                          className={dealId ? 'ai-deal-row' : ''}
+                          onClick={() => {
+                            if (dealId) onDeal(dealId);
+                          }}
+                          style={dealId ? { cursor: 'pointer' } : undefined}
+                          title={dealId ? (lang === 'uz' ? `${dealId} bitimni ochish` : `Открыть сделку #${dealId}`) : undefined}
+                        >
+                          {answer.columns.map((c) => (
+                            <td key={c.key}>
+                              {c.key === 'deal_id' && row[c.key] ? (
+                                <button
+                                  className="deal-link"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onDeal(Number(row[c.key]));
+                                  }}
+                                >
+                                  #{String(row[c.key])}
+                                </button>
+                              ) : (
+                                formatCell(row[c.key], c.kind)
+                              )}
+                            </td>
+                          ))}
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
