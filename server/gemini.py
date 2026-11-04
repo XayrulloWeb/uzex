@@ -27,7 +27,7 @@ class ModelUnavailable(Exception):
 class GeminiPool:
     def __init__(self, keys=None, models=None, transport=None, discover=True, budget=70.0, groq_key=None):
         self.groq_key = groq_key if groq_key is not None else (os.getenv('UZEX_GROQ_KEY') if keys is None else None)
-        self.groq_models = [m.strip() for m in os.getenv('UZEX_GROQ_MODELS', 'openai/gpt-oss-120b,qwen/qwen3.8-27b').split(',') if m.strip()]
+        self.groq_models = [m.strip() for m in os.getenv('UZEX_GROQ_MODELS', 'qwen/qwen3.8-27b,openai/gpt-oss-120b').split(',') if m.strip()]
         extra_keys = [k.strip() for k in os.getenv('UZEX_GEMINI_KEYS', '').split(',') if k.strip()]
         configured_keys = keys if keys is not None else ([os.getenv('UZEX_GEMINI_KEY_PRIMARY'), os.getenv('UZEX_GEMINI_KEY_BACKUP'), os.getenv('UZEX_GEMINI_KEY_3'), os.getenv('UZEX_GEMINI_KEY_4')] + extra_keys)
         self.keys = list(dict.fromkeys(k for k in configured_keys if k))
