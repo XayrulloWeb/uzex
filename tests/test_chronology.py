@@ -143,4 +143,5 @@ def test_largest_export_answer_contains_the_result_before_the_table():
 def test_exchange_rate_answer_states_the_actual_rate():
     result = execute_plan(QueryPlan(metric='rate',date_from=date(2026,10,30)), AIQuestion(question='Курс на 30 октября 2026'))
     assert '1 USD = 13\u202f369,54 UZS' in result['answer']
-    assert 'вымышленные' in result['answer']
+    assert 'usd_rates.csv' in result['answer']
+    assert 'не текущая котировка' in result['answer']

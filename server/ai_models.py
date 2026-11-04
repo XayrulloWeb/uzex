@@ -34,6 +34,19 @@ class AIQuestion(BaseModel):
     history: list[Annotated[str, Field(max_length=1500)]] = Field(default_factory=list, max_length=4)
 
 
+class MonthComparison(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    baseline: date
+    target: date
+    include_usd_rate: bool = False
+
+    @model_validator(mode='after')
+    def validate_months(self):
+        if self.baseline.day != 1 or self.target.day != 1 or self.baseline == self.target:
+            raise ValueError('Comparison requires two distinct month starts')
+        return self
+
+
 class QueryPlan(BaseModel):
     """A model chooses a typed operation, never executable SQL or factual prose."""
     model_config = ConfigDict(extra='forbid')
@@ -42,6 +55,7 @@ class QueryPlan(BaseModel):
     share_target: ShareTarget | None = None
     share_basis: Literal['amount','count','both'] = 'both'
     comparison: bool = False
+    month_comparison: MonthComparison | None = None
     years: list[Annotated[int,Field(ge=1900,le=2100)]] = Field(default_factory=list,max_length=5)
     group: Literal['none', 'month', 'year', 'seller', 'buyer', 'broker', 'region', 'commodity', 'category', 'status', 'form', 'auction'] = 'none'
     year: int | None = Field(default=None, ge=1900, le=2100)
@@ -73,6 +87,8 @@ class QueryPlan(BaseModel):
 
     @model_validator(mode='after')
     def validate_catalog(self):
+        if self.month_comparison and (self.metric not in ['amount','count'] or self.group != 'month' or not self.comparison):
+            raise ValueError('Monthly comparison requires amount/count grouped by month')
         if self.metric=='share' and self.share_target is None:
             raise ValueError('A share needs a numerator definition')
         if self.commodity and self.commodity not in {c[0] for c in COMMODITIES}:
@@ -108,7 +124,7 @@ def preflight(request: AIQuestion):
     years = [int(x) for x in re.findall(r'(?<!\d)((?:19|20)\d{2})(?!\d)', q)]
     if years and (min(years) < 2022 or max(years) > 2026):
         return 'out_of_period'
-    if re.search(r'чист\w*\s+прибыл|себестоим|sof\s+foyda|tannarx|net\s+profit', q):
+    if re.search(r'прибыл[ьи]\w*|наша\s+прибыл|себестоим|\bfoyda\w*|tannarx|net\s+profit', q):
         return 'unsupported_field'
     return None
 
@@ -227,6 +243,7 @@ Use only identifiers in the vocabulary. Company names must be copied literally f
 Honour all user constraints. Explicit dates/years override UI scope; otherwise use its selected year/region/commodity/status. "all time", "за весь период", "во всём наборе", "butun davr" override scope year to null. Relative dates use today's date from the request. With no reliable operation choose clarify/unsupported, not an unrelated overview. Do not ignore a requested period, brand, company, sort, unit or status.
 Every explicit condition is checked independently before execution. Preserve export/domestic type, companies, entity types, statuses, commodity, region, unit, grade/class, currency, ordering and top-N. Do not add filters absent from the question or UI. Company names in quotation marks are literal identifiers, not product names or years. Company/broker role is any unless the user specifies buyer or seller. A unique deal number overrides implicit UI filters; retain any explicitly requested conditions. A number labelled contract/shartnoma is not a deal number. For named months use the full month boundaries; for a particular trade day set equal date_from and date_to. Payment/delivery year questions use their event date, not trade date. "Ma’lumotlar to‘plamida" without a named year refers to all provided years. An explicit named year always takes precedence over generic all-period wording. Numeric amount/volume thresholds, simultaneous product/company comparisons, participant registration-region aggregation and late-delivery monetary totals are not representable by this schema: choose clarify instead of dropping these conditions.
 Shares/percentages ARE supported. Use metric=share, share_target={dimension:contract_type,value:Экспортный} for export share. Other share dimensions are commodity, region (seller warehouse), and status with a valid vocabulary value. share_target describes the numerator; DO NOT also filter the denominator to that same target. Other filters apply to both. share_basis is amount, count, or both; if unspecified show both rather than ask a generic clarification. Monetary shares use UZS converted at each trade date. For two or more named years use group=year and comparison=true; years contains only explicitly requested years. Share differences show percentage points AND relative percent change, with a zero-baseline check. For ordinary amount/count/volume growth use the existing metric, group=year, comparison=true. Never replace export amount growth with export market share. 2026 data end on October30; all comparisons must state this partial coverage. Numeric percentages and comparisons are computed by the server, never supplied as factual model text.
+Monthly amount/count comparisons are supported with group=month, comparison=true and month_comparison={baseline:YYYY-MM-01,target:YYYY-MM-01,include_usd_rate:boolean}. Baseline is the month after "относительно", "по сравнению с", or before Uzbek "nisbatan"; target is the month being evaluated, even when it is chronologically earlier. Use the two full month boundaries for date_from/date_to; only those two months are aggregated. If the same question ALSO requests the dollar exchange rate, include_usd_rate MUST be true. The server reports target-month daily mean/min/max from usd_rates, and computes the trade change independently with exact conversion at each deal date. Do not replace a rate+export comparison with either operation alone. For example, June 2026 exports relative to May uses baseline=2026-05-01,target=2026-06-01. No profit or causal claim can be inferred from these aggregates.
 '''+ '\nVOCABULARY: '+json.dumps(vocabulary, ensure_ascii=False)+'\nSCHEMA: '+json.dumps(QueryPlan.model_json_schema(), ensure_ascii=False)
 
 

@@ -11,6 +11,7 @@ from server.catalog import CANCELLED, SNAPSHOT, commodity_label, normalize, regi
 from server.db import query
 from server.question_checks import QuestionMismatch, calendar_mentions, question_text, relative_period, validate_question
 from server.ratios import comparison_answer, share_result
+from server.monthly import local_monthly_plan, monthly_result
 
 
 def outcome(reason: str, lang='ru', kind='no_data'):
@@ -43,7 +44,7 @@ def constrain_request(request: AIQuestion, plan: QueryPlan):
     if plan.company_name and normalize(plan.company_name) not in context:
         raise QuestionMismatch('company_not_supplied')
     if plan.action == 'query':
-        exact_plan = local_ratio_plan(request) or local_chronology_plan(request) or local_count_plan(request)
+        exact_plan = local_monthly_plan(request) or local_ratio_plan(request) or local_chronology_plan(request) or local_count_plan(request)
         if exact_plan:
             plan = exact_plan
         elif metric := chronological_metric(q):
@@ -206,7 +207,7 @@ def execute_plan(plan: QueryPlan, request: AIQuestion):
         rows = query(sql, parameters)
         if not rows:
             return outcome('not_found', lang)
-        answer = ('Курс из предоставленного набора; это вымышленные, не текущие рыночные значения.' if not uz else 'Kurs berilgan to‘plamdan olingan; bu o‘ylab topilgan, joriy bozor qiymatlari emas.')
+        answer = ('Источник курса — usd_rates.csv из набора задания UZEX; это данные задания, а не текущая котировка.' if not uz else 'Kurs manbasi — UZEX topshiriq to‘plamidagi usd_rates.csv; bu topshiriq ma’lumoti, joriy kotirovka emas.')
         if len(rows)==1:
             row = rows[0]
             fact = f"Курс на {date_text(row['rate_date'])}: 1 USD = {money(row['usd_rate'])} UZS." if not uz else f"{date_text(row['rate_date'])} sanasidagi kurs: 1 USD = {money(row['usd_rate'])} UZS."
@@ -222,6 +223,8 @@ def execute_plan(plan: QueryPlan, request: AIQuestion):
     if plan.date_from: add(plan.date_field+'>=?', plan.date_from)
     if plan.date_to: add(plan.date_field+'<=?', plan.date_to)
     if plan.years: add('year('+plan.date_field+') IN ('+','.join('?' for _ in plan.years)+')',*plan.years)
+    if plan.month_comparison:
+        add("strftime("+plan.date_field+",'%Y-%m') IN (?,?)",*[d.strftime('%Y-%m') for d in [plan.month_comparison.baseline,plan.month_comparison.target]])
     if plan.metric in ['first_deal', 'last_deal']:
         add(plan.date_field+' IS NOT NULL')
     for field in ['commodity','region','contract_type','form','deal_id','contract_id']:
@@ -276,8 +279,9 @@ def execute_plan(plan: QueryPlan, request: AIQuestion):
         add('unit=?',plan.physical_unit)
     condition = ' AND '.join(conditions)
     total = query(f'SELECT count(*) AS count,min({plan.date_field}) AS first_date,max({plan.date_field}) AS last_date FROM trades WHERE '+condition, parameters)[0]
-    if total['count']==0 and (plan.metric!='count' or plan.deal_id or plan.contract_id or plan.brand or plan.product_text):
+    if total['count']==0 and not plan.month_comparison and (plan.metric!='count' or plan.deal_id or plan.contract_id or plan.brand or plan.product_text):
         return outcome('not_found',lang)
+    if plan.month_comparison: return monthly_result(plan,lang,condition,parameters,amount,total)
     if plan.metric=='share': return share_result(plan,lang,condition,parameters,total)
     if plan.metric in ['detail','records','first_deal','last_deal','min_price','max_price','min_amount','max_amount']:
         return record_result(plan, lang, condition, parameters, amount, quantity, unit, total, request.question)
@@ -425,6 +429,11 @@ def plan_context(plan,lang):
     if plan.metric=='rate':
         if plan.date_from: labels.append(date_text(plan.date_from)+((' — '+date_text(plan.date_to)) if plan.date_to and plan.date_to!=plan.date_from else ''))
         return labels
+    if plan.month_comparison:
+        labels.append(('Базовый месяц: ' if not uz else 'Asosiy oy: ')+plan.month_comparison.baseline.strftime('%Y-%m'))
+        labels.append(('Целевой месяц: ' if not uz else 'Maqsadli oy: ')+plan.month_comparison.target.strftime('%Y-%m'))
+        if plan.month_comparison.include_usd_rate:
+            labels.append('Средний и диапазон дневных курсов USD' if not uz else 'Kunlik USD kurslarining o‘rtachasi va oralig‘i')
     labels.append(scope_text(plan,lang))
     if plan.date_field!='deal_date': labels.append(('По дате оплаты' if plan.date_field=='payment_date' else 'По дате поставки') if not uz else ('To‘lov sanasi bo‘yicha' if plan.date_field=='payment_date' else 'Yetkazish sanasi bo‘yicha'))
     if plan.contract_type: labels.append(('Eksport' if plan.contract_type=='Экспортный' else 'Ichki') if uz else plan.contract_type)

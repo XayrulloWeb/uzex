@@ -10,6 +10,7 @@ from server.ai_models import AIQuestion, QueryPlan, language, local_chronology_p
 from server.ai_analytics import constrain_request, execute_plan, outcome
 from server.gemini import ModelUnavailable, get_pool
 from server.question_checks import QuestionMismatch
+from server.monthly import local_monthly_plan
 
 router=APIRouter(prefix='/api/ai',tags=['AI analyst'])
 
@@ -35,11 +36,11 @@ async def ask(request: AIQuestion):
         return response
     try:
         async with asyncio.timeout(80):
-            trusted=local_ratio_plan(request)
+            trusted=local_monthly_plan(request) or local_ratio_plan(request)
             if trusted:
                 plan=constrain_request(request,trusted)
                 response=await asyncio.to_thread(execute_plan,plan,request)
-                response['provider']={'kind':'local','model':'verified-ratio' if plan.metric=='share' else 'verified-comparison','attempts':0,'used_backup':False}
+                response['provider']={'kind':'local','model':'verified-monthly-report' if plan.month_comparison else 'verified-ratio' if plan.metric=='share' else 'verified-comparison','attempts':0,'used_backup':False}
                 response['elapsed_ms']=round((time.monotonic()-started)*1000)
                 return response
             def validate(text):

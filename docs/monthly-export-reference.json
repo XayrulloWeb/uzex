@@ -1,0 +1,75 @@
+{
+  "method": "Independent Python csv + Decimal(precision=50); no production parsers, SQL, or analytics helpers. Join original contracts by ID and TN VED. All trade statuses included; separate active totals also recorded. Each USD trade converted at its own trade date. Monthly rate is the arithmetic mean of all calendar observations.",
+  "products": {
+    "520100": {
+      "5": {
+        "deals": 0,
+        "amount_usd": "0",
+        "amount_uzs": "0",
+        "active_deals": 0,
+        "active_amount_uzs": "0"
+      },
+      "6": {
+        "deals": 0,
+        "amount_usd": "0",
+        "amount_uzs": "0",
+        "active_deals": 0,
+        "active_amount_uzs": "0"
+      },
+      "difference_uzs": "0",
+      "relative_percent": null
+    },
+    "520512": {
+      "5": {
+        "deals": 84,
+        "amount_usd": "8930707.05",
+        "amount_uzs": "114857775931.4893",
+        "active_deals": 76,
+        "active_amount_uzs": "105666338152.8469"
+      },
+      "6": {
+        "deals": 73,
+        "amount_usd": "7252658.20",
+        "amount_uzs": "95508611997.9636",
+        "active_deals": 65,
+        "active_amount_uzs": "84915438786.7238"
+      },
+      "difference_uzs": "-19349163933.5257",
+      "relative_percent": "-16.846194153251883910543364891812490859073381479184"
+    },
+    "740311": {
+      "5": {
+        "deals": 72,
+        "amount_usd": "18134620.30",
+        "amount_uzs": "233878823834.9352",
+        "active_deals": 68,
+        "active_amount_uzs": "222751928057.2116"
+      },
+      "6": {
+        "deals": 95,
+        "amount_usd": "29548467.28",
+        "amount_uzs": "388949909872.0003",
+        "active_deals": 86,
+        "active_amount_uzs": "350460640462.8619"
+      },
+      "difference_uzs": "155071086037.0651",
+      "relative_percent": "66.304030221440533186946575900333324583816703968730"
+    }
+  },
+  "rates": {
+    "5": {
+      "days": 31,
+      "sum": "399947.91",
+      "mean": "12901.545483870967741935483870967741935483870967742",
+      "min": "12741.58",
+      "max": "13078.87"
+    },
+    "6": {
+      "days": 30,
+      "sum": "394877.45",
+      "mean": "13162.581666666666666666666666666666666666666666667",
+      "min": "13098.94",
+      "max": "13253.16"
+    }
+  }
+}

@@ -48,7 +48,9 @@ def _products(text):
     compounds = {
         'pipe': (r'полиэтилен\w*\s+труб\w*|polietilen\w*\s+quvur\w*', 'polyethylene'),
         'wire': (r'арматурн\w*\s+проволок\w*|armatura\w*\s+sim\w*', 'rebar'),
-        'yarn': (r'paxta\s+ip\w*', 'cotton'),
+        'yarn': (r'хлопков\w*\s+пряж\w*|paxta\s+(?:ip\w*|kalava\w*)', 'cotton'),
+        'cotton_oil': (r'хлопков\w*\s+масл\w*|paxta\s+yog\w*', 'cotton'),
+        'meal': (r'хлопков\w*\s+шрот\w*|paxta\s+shrot\w*', 'cotton'),
     }
     for key,(pattern,ingredient) in compounds.items():
         if re.search(pattern,text):
@@ -60,7 +62,7 @@ def _products(text):
 
 MONTHS = [
     r'январ\w*|yanvar\w*', r'феврал\w*|fevral\w*', r'март\w*|mart\w*',
-    r'апрел\w*|aprel\w*', r'ма[йяе]|may', r'июн\w*|iyun\w*',
+    r'апрел\w*|aprel\w*', r'ма(?:й|я|е|ем|ю)|may\w*', r'июн\w*|iyun\w*',
     r'июл\w*|iyul\w*', r'август\w*|avgust\w*', r'сентябр\w*|sentabr\w*|sentyabr\w*',
     r'октябр\w*|oktabr\w*|oktyabr\w*', r'ноябр\w*|noyabr\w*', r'декабр\w*|dekabr\w*',
 ]
@@ -96,6 +98,14 @@ def relative_period(text):
 def _calendar_checks(q, plan, require, scope_year):
     years = sorted({int(value) for value in re.findall(r'(?<!\d)((?:19|20)\d{2})(?!\d)',q)})
     dates,months = calendar_mentions(q)
+    if plan.month_comparison:
+        from server.monthly import month_end
+        comparison=plan.month_comparison
+        require('date_from',min(comparison.baseline,comparison.target))
+        end=month_end(max(comparison.baseline,comparison.target))
+        if plan.date_to!=end and not (end>date.fromisoformat(SNAPSHOT) and plan.date_to==date.fromisoformat(SNAPSHOT)):
+            raise QuestionMismatch('date_to')
+        return
     if not years and months and not relative_period(q):
         if scope_year is None: raise QuestionMismatch('month_without_year')
         years = [scope_year]
@@ -142,6 +152,17 @@ def validate_question(request, plan):
         if actual!=expected: raise QuestionMismatch(field)
 
     q = question_text(request.question)
+    from server.monthly import month_requirements, rate_requested
+    monthly = month_requirements(request)
+    if monthly is not None and plan.metric in ['amount','count']:
+        require('month_comparison',monthly)
+        require('group','month'); require('comparison',True)
+    elif plan.month_comparison:
+        raise QuestionMismatch('unexpected_month_comparison')
+    if rate_requested(q) and plan.metric!='rate' and not (plan.month_comparison and plan.month_comparison.include_usd_rate):
+        raise QuestionMismatch('missing_exchange_rate_operation')
+    if len(calendar_mentions(q)[1])>1 and plan.metric in ['amount','count'] and re.search(r'относительно|сравнени|nisbatan',q) and monthly is None:
+        raise QuestionMismatch('ambiguous_month_comparison')
     followup = bool(request.history and (re.search(r'^(?:а\b|теперь\b|также\b|для\s+(?:этого|него)|endi\b|shu\b|o\'sha\b)',q) or re.fullmatch(r'(?:за|в)\s+20\d{2}(?:\s+году)?[?!.]*',q)))
     previous = question_text(' '.join(request.history)) if followup else ''
     has_previous = lambda value: bool(previous and normalize(str(value)).strip('"«»') in previous)
@@ -290,6 +311,8 @@ def validate_question(request, plan):
     volume = bool(re.search(r'\bобъем\w*|\bhajm\w*|сколько(?:\s+(?:всего|было))?\s+(?:тонн|килограмм|литр|штук|метр)|qancha\s+(?:tonna|kilogram|litr|dona)',q))
     counting = bool(re.search(r'сколько(?:\s+\w+){0,3}\s+сдел|в\s+скольких.*?сделк|число\s+сдел|количество\s+сдел|nechta(?:\s+noyob)?\s+bitim|bitimlar\s+soni',q))
     late = bool(re.search(r'с\s+опозданием|позже\s+срока|kech\s+yetkaz',q))
+    if plan.month_comparison and (volume or price or weighted or late):
+        raise QuestionMismatch('additional_monthly_measure_not_supported')
     if plan.metric=='share' and (volume or late): raise QuestionMismatch('unsupported_share_basis_or_filter')
     if late and (amount or volume or price): raise QuestionMismatch('late_calculation_not_supported')
     if share_intent(q): require('metric','share')
@@ -333,12 +356,14 @@ def validate_question(request, plan):
     wanted_groups = {group for group,pattern in groups.items() if re.search(pattern,q)}
     if len(wanted_groups)>1: raise QuestionMismatch('multiple_groups')
     if wanted_groups: require('group',wanted_groups.pop())
-    elif plan.group!='none' and not ranked and not (plan.comparison and plan.group=='year') and not re.search(r'сравн|taqqosla|solishtir',q):
+    elif plan.group!='none' and not ranked and not (plan.comparison and (plan.group=='year' or plan.month_comparison)) and not re.search(r'сравн|taqqosla|solishtir',q):
         if not previous or not re.search(groups[plan.group],previous): raise QuestionMismatch('unexpected_group')
 
     if plan.metric!='rate' and plan.metric!='count':
-        if re.search(r'в\s+сум(?:ах|ы)|\buzs\b|so\'m(?:da|ga)',q): require('report_currency','UZS')
-        elif re.search(r'в\s+долларах|\busd\b|dollarda',q): require('report_currency','USD')
+        from server.monthly import trade_currency_text
+        currency_q=trade_currency_text(q) if plan.month_comparison else q
+        if re.search(r'в\s+сум(?:ах|ы)|\buzs\b|so\'m(?:da|ga)',currency_q): require('report_currency','UZS')
+        elif re.search(r'в\s+долларах|\busd\b|dollarda',currency_q): require('report_currency','USD')
     if plan.participant_inn or plan.broker_code or plan.company_name:
         buyer = bool(re.search(r'покупател|покупок|закупок|xarid',q))
         seller = bool(re.search(r'продав[це]|продаж|sotuvchi|sotgan',q))

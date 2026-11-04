@@ -1,0 +1,165 @@
+{
+  "status": "answer",
+  "answer": "Курс доллара за 2026-06: средний — 13 162,58 UZS за 1 USD; дневной диапазон — 13 098,94–13 253,16 UZS (30 дней).\nСумма зарегистрированных экспортных сделок — Хлопок-сырец: 2026-05 — 0,00 UZS; 2026-06 — 0,00 UZS.\nВ предоставленном наборе сделки по этим условиям за оба месяца не найдены. Рост по нулевой базе рассчитать нельзя.\n2026-06 относительно 2026-05: изменение 0,00 UZS; относительное изменение — не определено: исходное значение равно 0.\nИсточник курса — usd_rates.csv из набора задания UZEX; это данные задания, а не текущая котировка.",
+  "columns": [
+    {
+      "key": "label",
+      "label": "Наименование",
+      "kind": "text"
+    },
+    {
+      "key": "deals",
+      "label": "Сделки",
+      "kind": "integer"
+    },
+    {
+      "key": "amount",
+      "label": "Сумма",
+      "kind": "decimal",
+      "unit": "UZS"
+    },
+    {
+      "key": "rate_mean",
+      "label": "Средний курс",
+      "kind": "decimal",
+      "unit": "UZS/USD"
+    },
+    {
+      "key": "rate_min",
+      "label": "Мин. курс",
+      "kind": "decimal",
+      "unit": "UZS/USD"
+    },
+    {
+      "key": "rate_max",
+      "label": "Макс. курс",
+      "kind": "decimal",
+      "unit": "UZS/USD"
+    }
+  ],
+  "rows": [
+    {
+      "id": "2026-05",
+      "label": "2026-05",
+      "deals": 0,
+      "amount": "0.00000000",
+      "rate_days": 31,
+      "rate_sum": "399947.9100",
+      "rate_min": "12741.5800",
+      "rate_max": "13078.8700",
+      "rate_mean": "12901.545483870967741935483870967741935"
+    },
+    {
+      "id": "2026-06",
+      "label": "2026-06",
+      "deals": 0,
+      "amount": "0.00000000",
+      "rate_days": 30,
+      "rate_sum": "394877.4500",
+      "rate_min": "13098.9400",
+      "rate_max": "13253.1600",
+      "rate_mean": "13162.581666666666666666666666666666667"
+    }
+  ],
+  "interpretation": [
+    "Сумма сделок",
+    "Базовый месяц: 2026-05",
+    "Целевой месяц: 2026-06",
+    "Средний и диапазон дневных курсов USD",
+    "за период 01.05.2026–30.06.2026",
+    "Экспортный",
+    "Хлопок-сырец",
+    "По месяцам",
+    "Все состояния",
+    "UZS"
+  ],
+  "provenance": {
+    "sql": "WITH trade_totals AS (\n        SELECT strftime(deal_date,'%Y-%m') AS id,count(*) AS deals,coalesce(sum(amount_uzs),0) AS amount\n        FROM trades WHERE TRUE AND year(deal_date)=? AND deal_date>=? AND deal_date<=? AND strftime(deal_date,'%Y-%m') IN (?,?) AND commodity=? AND contract_type=? GROUP BY id\n    ), rate_totals AS (\n        SELECT strftime(rate_date,'%Y-%m') AS id,count(*) AS rate_days,\n               sum(usd_rate) AS rate_sum,min(usd_rate) AS rate_min,max(usd_rate) AS rate_max\n        FROM usd_rates WHERE strftime(rate_date,'%Y-%m') IN (?,?) GROUP BY id\n    ), periods AS (SELECT ? AS id UNION ALL SELECT ? AS id)\n    SELECT p.id,p.id AS label,coalesce(t.deals,0) AS deals,coalesce(t.amount,0) AS amount,\n           r.rate_days,r.rate_sum,r.rate_min,r.rate_max\n    FROM periods p LEFT JOIN trade_totals t USING(id) LEFT JOIN rate_totals r USING(id)\n    ORDER BY CASE WHEN p.id=? THEN 0 ELSE 1 END",
+    "parameters": [
+      2026,
+      "2026-05-01",
+      "2026-06-30",
+      "2026-05",
+      "2026-06",
+      "cotton",
+      "Экспортный",
+      "2026-05",
+      "2026-06",
+      "2026-05",
+      "2026-06",
+      "2026-05"
+    ],
+    "row_count": 0,
+    "snapshot": "2026-10-30",
+    "sources": [
+      "deals_2022…2026.csv",
+      "contracts.csv",
+      "participants.csv",
+      "brokers.csv",
+      "usd_rates.csv"
+    ],
+    "period": {
+      "from": null,
+      "to": null
+    },
+    "date_field": "deal_date",
+    "currency": "UZS",
+    "include_cancelled": true,
+    "statuses": [],
+    "method": "Изменение = целевой месяц − базовый месяц. Относительное изменение = разница ÷ базовый месяц × 100; при нулевой базе не определено. Суммы USD приведены к UZS по дате каждой сделки. Средний курс = сумма дневных курсов ÷ число дней; курс не взвешен по сделкам и не используется вместо дневного курса при пересчёте сумм.",
+    "comparison": {
+      "from": "2026-05",
+      "to": "2026-06",
+      "difference": "0.00000000",
+      "relative_percent": null,
+      "currency": "UZS"
+    }
+  },
+  "plan": {
+    "action": "query",
+    "metric": "amount",
+    "share_target": null,
+    "share_basis": "both",
+    "comparison": true,
+    "month_comparison": {
+      "baseline": "2026-05-01",
+      "target": "2026-06-01",
+      "include_usd_rate": true
+    },
+    "years": [],
+    "group": "month",
+    "year": 2026,
+    "date_from": "2026-05-01",
+    "date_to": "2026-06-30",
+    "date_field": "deal_date",
+    "commodity": "cotton",
+    "region": null,
+    "statuses": [],
+    "include_cancelled": true,
+    "contract_type": "Экспортный",
+    "form": null,
+    "deal_id": null,
+    "contract_id": null,
+    "participant_inn": null,
+    "company_name": null,
+    "role": "any",
+    "broker_code": null,
+    "grade": null,
+    "brand": null,
+    "quality_class": null,
+    "product_text": null,
+    "report_currency": "UZS",
+    "physical_unit": null,
+    "delivered_only": false,
+    "limit": 10,
+    "order": "desc",
+    "reason": "unknown"
+  },
+  "provider": {
+    "kind": "local",
+    "model": "verified-monthly-report",
+    "attempts": 0,
+    "used_backup": false
+  },
+  "elapsed_ms": 84
+}
