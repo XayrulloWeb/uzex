@@ -1,0 +1,19 @@
+# Database generated files
+uzex.db
+uzex.db-wal
+uzex.db-shm
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# Node
+frontend/node_modules/
+frontend/.vite/
+
+# OS
+.DS_Store
+Thumbs.db
