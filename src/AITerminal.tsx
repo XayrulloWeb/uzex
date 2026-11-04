@@ -222,7 +222,9 @@ export default function AITerminal({
               </small>
             )}
           </div>
-          <p>{answer.answer}</p>
+          <p className={answer.status === 'answer' ? 'ai-answer-summary' : undefined}>
+            {answer.answer}
+          </p>
           {answer.provenance?.period?.from && (
             <div className="ai-result-period">
               {periodLabel}: {answer.provenance.period.from} — {answer.provenance.period.to}
@@ -230,6 +232,9 @@ export default function AITerminal({
           )}
           {!!answer.rows.length && (
             <>
+              <div className="ai-evidence-label">
+                {t('Подтверждающие данные', 'Tasdiqlovchi ma’lumotlar')}
+              </div>
               <div className="table-scroll">
                 <table className="report-table">
                   <thead>

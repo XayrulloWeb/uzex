@@ -3410,6 +3410,18 @@ footer .footer-coordinate {
   margin: 14px 0 18px;
   white-space: pre-line;
 }
+.ai-answer > p.ai-answer-summary {
+  font-size: 17px;
+  line-height: 1.7;
+  font-weight: 550;
+  color: #2b421d;
+}
+.ai-evidence-label {
+  margin: 22px 0 10px;
+  color: #78905f;
+  font: 9px var(--mono);
+  letter-spacing: 0.05em;
+}
 .ai-answer .report-table {
   min-width: 550px;
 }
@@ -3542,6 +3554,10 @@ footer .footer-coordinate {
   .ai-answer > p {
     font-size: 12px;
     line-height: 1.9;
+  }
+  .ai-answer > p.ai-answer-summary {
+    font-size: 14px;
+    line-height: 1.8;
   }
   .ai-answer .report-table {
     min-width: 500px;
