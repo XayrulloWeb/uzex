@@ -33,9 +33,11 @@ async def ask(request: AIQuestion):
         async with asyncio.timeout(80):
             def validate(text):
                 payload=json.loads(text)
+                if isinstance(payload, list):
+                    payload = payload[0] if payload else {}
                 if isinstance(payload,dict) and payload.get('action','query')=='query' and 'metric' not in payload:
                     raise ValueError('Model must explicitly choose a metric')
-                return constrain_request(request,QueryPlan.model_validate_json(text))
+                return constrain_request(request,QueryPlan.model_validate(payload))
             plan,provider=await get_pool().generate(system_prompt(),prompt(request),validate)
             response=await asyncio.to_thread(execute_plan,plan,request)
             provider['kind']='gemini'

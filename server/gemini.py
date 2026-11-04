@@ -15,7 +15,7 @@ import httpx
 from server.question_checks import QuestionMismatch
 
 API = 'https://generativelanguage.googleapis.com/v1beta'
-DEFAULT_MODELS = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-pro']
+DEFAULT_MODELS = ['gemini-flash-lite-latest', 'gemini-3.1-flash-lite', 'gemini-3.5-flash', 'gemini-3.8-flash', 'gemini-2.5-flash']
 
 
 class ModelUnavailable(Exception):
@@ -26,7 +26,8 @@ class ModelUnavailable(Exception):
 
 class GeminiPool:
     def __init__(self, keys=None, models=None, transport=None, discover=True, budget=70.0):
-        configured_keys = keys if keys is not None else [os.getenv('UZEX_GEMINI_KEY_PRIMARY'), os.getenv('UZEX_GEMINI_KEY_BACKUP')]
+        extra_keys = [k.strip() for k in os.getenv('UZEX_GEMINI_KEYS', '').split(',') if k.strip()]
+        configured_keys = keys if keys is not None else ([os.getenv('UZEX_GEMINI_KEY_PRIMARY'), os.getenv('UZEX_GEMINI_KEY_BACKUP'), os.getenv('UZEX_GEMINI_KEY_3'), os.getenv('UZEX_GEMINI_KEY_4')] + extra_keys)
         self.keys = list(dict.fromkeys(k for k in configured_keys if k))
         configured_models = models or os.getenv('UZEX_GEMINI_MODELS', '').split(',')
         self.models = list(dict.fromkeys(m.strip() for m in configured_models if m.strip())) or DEFAULT_MODELS[:]
@@ -63,7 +64,7 @@ class GeminiPool:
                 preferred = [m for m in self.models if m in available]
                 fast = [m for m in available if 'flash' in m and not any(x in m for x in ['image', 'audio', 'tts', 'live', 'native', 'embedding'])]
                 fast.sort(key=lambda m: ('preview' in m or 'exp' in m, 'lite' not in m, m))
-                self.models = list(dict.fromkeys(preferred + fast))[:3] or self.models
+                self.models = list(dict.fromkeys(preferred + fast))[:6] or self.models
                 self._discovered_at = time.monotonic()
                 return
             except (httpx.HTTPError, ValueError, KeyError, TypeError):
