@@ -82,7 +82,8 @@ def money(value, places=2):
 
 def preflight(request: AIQuestion):
     """Known coverage/field absence is checked without asking a language model."""
-    q = request.question.casefold()
+    from server.question_checks import question_text
+    q = question_text(request.question)
     years = [int(x) for x in re.findall(r'(?<!\d)((?:19|20)\d{2})(?!\d)', q)]
     if years and (min(years) < 2022 or max(years) > 2026):
         return 'out_of_period'
@@ -100,6 +101,11 @@ def chronological_metric(text: str):
     last = r'(?:последн(?:ий|яя|ее|его|ей|юю|ем)|сам\w*\s+поздн\w*|oxirgi|so\'nggi|eng\s+kech)'
     earliest = bool(re.search(r'\b'+first+r'\s+'+modifiers+event, q))
     latest = bool(re.search(r'\b'+last+r'\s+'+modifiers+event, q))
+    earliest |= bool(re.search(r'начал\w*\s+экспорт|экспорт\w*\s+начал|впервые.*?экспорт|с\s+какой\s+даты.*?экспорт|eksport.*?boshlan',q))
+    latest |= bool(re.search(r'последний\s+раз.*?экспорт|экспорт.*?последний\s+раз|eksport.*?oxirgi\s+marta',q))
+    if (earliest and latest) or re.search(r'(?:перв\w*|birinchi|ilk)\s+(?:и|va)\s+(?:последн\w*|oxirgi|so\'nggi)\s+'+modifiers+event,q):
+        from server.question_checks import QuestionMismatch
+        raise QuestionMismatch('multiple_chronological_operations')
     if earliest != latest:
         return 'first_deal' if earliest else 'last_deal'
     return None
@@ -146,6 +152,7 @@ All monetary measures default to UZS, each USD deal converted at its own date. U
 For rankings choose group and limit, order desc for largest. For group=broker a deal is counted once per broker even when on both sides. region is SELLER WAREHOUSE, not buyer/company registration. Tashkent city and region differ. Match product to a catalogue id; diesel and fuel_oil share TN VED 271019 but differ. Cotton, cotton oil, yarn and meal are distinct. grade and quality_class are distinct, I sort II class => grade=1, quality_class=2. Preserve brand such as АИ-92 as written in source language when known.
 Use only identifiers in the vocabulary. Company names must be copied literally from the question/history (never invent INNs); all company matching is done later against the database. IDs and codes must appear in the question/history. Do not guess or use the first vaguely similar company. Ambiguity -> action=clarify.
 Honour all user constraints. Explicit dates/years override UI scope; otherwise use its selected year/region/commodity/status. "all time", "за весь период", "во всём наборе", "butun davr" override scope year to null. Relative dates use today's date from the request. With no reliable operation choose clarify/unsupported, not an unrelated overview. Do not ignore a requested period, brand, company, sort, unit or status.
+Every explicit condition is checked independently before execution. Preserve export/domestic type, companies, entity types, statuses, commodity, region, unit, grade/class, currency, ordering and top-N. Do not add filters absent from the question or UI. Company names in quotation marks are literal identifiers, not product names or years. Company/broker role is any unless the user specifies buyer or seller. A unique deal number overrides implicit UI filters; retain any explicitly requested conditions. A number labelled contract/shartnoma is not a deal number. For named months use the full month boundaries; for a particular trade day set equal date_from and date_to. Payment/delivery year questions use their event date, not trade date. "Ma’lumotlar to‘plamida" without a named year refers to all provided years. An explicit named year always takes precedence over generic all-period wording. Numeric amount/volume thresholds, simultaneous product/company comparisons, participant registration-region aggregation and late-delivery monetary totals are not representable by this schema: choose clarify instead of dropping these conditions.
 '''+ '\nVOCABULARY: '+json.dumps(vocabulary, ensure_ascii=False)+'\nSCHEMA: '+json.dumps(QueryPlan.model_json_schema(), ensure_ascii=False)
 
 

@@ -12,6 +12,8 @@ from typing import Any
 
 import httpx
 
+from server.question_checks import QuestionMismatch
+
 API = 'https://generativelanguage.googleapis.com/v1beta'
 DEFAULT_MODELS = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-pro']
 
@@ -88,6 +90,7 @@ class GeminiPool:
                 raise ModelUnavailable('busy')
             self._active += 1
         attempts = 0
+        question_mismatch = False
         try:
             async with asyncio.timeout(self.budget):
                 deadline = time.monotonic()+self.budget
@@ -142,9 +145,11 @@ class GeminiPool:
                                 return value, {'model': model, 'attempts': attempts, 'used_backup': index > 0 or model_index > 0}
                             except httpx.TransportError:
                                 self._block(index, model, 15)
+                            except QuestionMismatch:
+                                question_mismatch = True
                             except (ValueError, KeyError, IndexError, TypeError, json.JSONDecodeError):
                                 self._block(index, model, 15)
-            raise ModelUnavailable('all_unavailable')
+            raise ModelUnavailable('question_mismatch' if question_mismatch else 'all_unavailable')
         except TimeoutError:
             raise ModelUnavailable('deadline') from None
         finally:

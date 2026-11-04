@@ -1,0 +1,702 @@
+{
+  "run_at": "2026-11-05T00:45:41.409027+05:00",
+  "method": "Scripted model plans; real HTTP handler, independent constraint checks and real DuckDB results compared against CSV references. NOT a live Gemini or unseen-question evaluation.",
+  "questions": 36,
+  "passed": 36,
+  "results": [
+    {
+      "id": "count_2024",
+      "language": "ru",
+      "question": "Сколько сделок зарегистрировано в 2024 году, включая все состояния?",
+      "expected": {
+        "count": 106647
+      },
+      "status": "answer",
+      "actual_rows": [
+        {
+          "deals": 106647
+        }
+      ],
+      "actual_answer": "По выбранным условиям — 106 647 сделок.",
+      "passed": true
+    },
+    {
+      "id": "cancelled_2024",
+      "language": "ru",
+      "question": "Сколько сделок 2024 года аннулировано из-за неоплаты?",
+      "expected": {
+        "count": 7323
+      },
+      "status": "answer",
+      "actual_rows": [
+        {
+          "deals": 7323
+        }
+      ],
+      "actual_answer": "По выбранным условиям — 7 323 сделок.",
+      "passed": true
+    },
+    {
+      "id": "forms_2024",
+      "language": "ru",
+      "question": "Покажи число сделок 2024 года по формам контракта, включая все состояния.",
+      "expected": {
+        "Спот": 98384,
+        "Форвард": 7858,
+        "Фьючерс": 405
+      },
+      "status": "answer",
+      "actual_rows": [
+        {
+          "id": "Спот",
+          "label": "Спот",
+          "deals": 98384
+        },
+        {
+          "id": "Форвард",
+          "label": "Форвард",
+          "deals": 7858
+        },
+        {
+          "id": "Фьючерс",
+          "label": "Фьючерс",
+          "deals": 405
+        }
+      ],
+      "actual_answer": "Лидер по числу сделок (формы контракта): Спот — 98 384 сделок. Учтено 106 647 сделок; показано 3 строк.",
+      "passed": true
+    },
+    {
+      "id": "export_2024",
+      "language": "ru",
+      "question": "Какова сумма экспортных сделок 2024 года в сумах, включая аннулированные?",
+      "expected": {
+        "count": 1327,
+        "amount_uzs_exact": "2621400340149.8958",
+        "amount_uzs_2dp": "2621400340149.90"
+      },
+      "status": "answer",
+      "actual_rows": [
+        {
+          "deals": 1327,
+          "amount": "2621400340149.89580000"
+        }
+      ],
+      "actual_answer": "Сумма зарегистрированных сделок — 2 621 400 340 149,90 UZS; учтено 1 327 сделок.",
+      "passed": true
+    },
+    {
+      "id": "largest_domestic_buyer_2024",
+      "language": "ru",
+      "question": "Кто крупнейший покупатель по сумме внутренних сделок 2024 года без аннулированных?",
+      "expected": {
+        "inn": "983531029",
+        "name": "\"Zoket Invest\" OK",
+        "amount_uzs": "1127417344173.29"
+      },
+      "status": "answer",
+      "actual_rows": [
+        {
+          "id": "983531029",
+          "label": "\"Zoket Invest\" OK",
+          "deals": 2014,
+          "amount": "1127417344173.29000000"
+        }
+      ],
+      "actual_answer": "Лидер по сумме сделок (покупатели): \"Zoket Invest\" OK (ИНН 983531029) — 1 127 417 344 173,29 UZS. Учтено 98 095 сделок; показано 1 строк.",
+      "passed": true
+    },
+    {
+      "id": "late_fulfilled_2024",
+      "language": "ru",
+      "question": "Сколько полностью исполненных сделок 2024 года поставлено позже срока из карточки контракта?",
+      "expected": {
+        "count": 3759
+      },
+      "status": "answer",
+      "actual_rows": [
+        {
+          "deals": 3759
+        }
+      ],
+      "actual_answer": "По выбранным условиям — 3 759 сделок.",
+      "passed": true
+    },
+    {
+      "id": "weighted_diesel_price_2024",
+      "language": "ru",
+      "question": "Какова средневзвешенная цена килограмма дизельного топлива во внутренних сделках 2024 года без аннулированных?",
+      "expected": {
+        "matched_deals": 5604,
+        "amount_uzs": "2081509050779",
+        "quantity_kg": "169355794",
+        "price_uzs_per_kg_2dp": "12290.75"
+      },
+      "status": "answer",
+      "actual_rows": [
+        {
+          "deals": 5604,
+          "amount": "2081509050779.00000000",
+          "quantity": "169355794.0000",
+          "unit": "килограмм",
+          "price": "12290.74601828503133468229614"
+        }
+      ],
+      "actual_answer": "Средневзвешенная цена — 12 290,75 UZS / килограмм. Расчёт: сумма сделок ÷ суммарный физический объём.",
+      "passed": true
+    },
+    {
+      "id": "nonunit_lot_volume",
+      "language": "ru",
+      "question": "Каков объём сделки №100007 в единицах измерения?",
+      "expected": {
+        "deal_id": "100007",
+        "quantity_lots": "48",
+        "lot_size": "1000",
+        "physical_volume": "48000",
+        "unit": "штука"
+      },
+      "status": "answer",
+      "actual_rows": [
+        {
+          "deal_id": 100007,
+          "deal_date": "2022-01-03",
+          "deal_time": "10:52:43",
+          "product_label": "Кирпич керамический М-100",
+          "quantity": "48000.0000",
+          "unit": "штука",
+          "amount": "35520000.00000000",
+          "status": "Исполнен",
+          "seller_name": "QITOKI QURILISH MCHJ",
+          "buyer_name": "\"Pozok Trade\" MChJ",
+          "price": "740.0000"
+        }
+      ],
+      "actual_answer": "Сделка №100007 от 03.01.2022: Кирпич керамический М-100. Объём — 48 000 штука; сумма — 35 520 000,00 UZS.",
+      "passed": true
+    },
+    {
+      "id": "usd_rate_snapshot",
+      "language": "ru",
+      "question": "Какой курс доллара указан в данных на 30 октября 2026 года?",
+      "expected": {
+        "rate_uzs_per_usd": "13369.54"
+      },
+      "status": "answer",
+      "actual_rows": [
+        {
+          "rate_date": "2026-10-30",
+          "usd_rate": "13369.5400"
+        }
+      ],
+      "actual_answer": "Курс на 30.10.2026: 1 USD = 13 369,54 UZS. Курс из предоставленного набора; это вымышленные, не текущие рыночные значения.",
+      "passed": true
+    },
+    {
+      "id": "export_deal_conversion",
+      "language": "ru",
+      "question": "Переведи сумму сделки №100024 в сумы по курсу из набора данных на дату сделки.",
+      "expected": {
+        "deal_id": "100024",
+        "amount_usd": "43176.64",
+        "rate_uzs_per_usd": "10839.03",
+        "amount_uzs_exact": "467992896.2592"
+      },
+      "status": "answer",
+      "actual_rows": [
+        {
+          "deal_id": 100024,
+          "deal_date": "2022-01-03",
+          "deal_time": "11:31:50",
+          "product_label": "Пряжа хлопковая Марка Ne 20/1",
+          "quantity": "13.0000",
+          "unit": "тонна",
+          "amount": "467992896.25920000",
+          "status": "Исполнен",
+          "seller_name": "\"ФАЮМ АГРО\" МЧЖ",
+          "buyer_name": "\"Reshoyi Savdo\" MChJ",
+          "price": "35999453.5584"
+        }
+      ],
+      "actual_answer": "Сделка №100024 от 03.01.2022: Пряжа хлопковая Марка Ne 20/1. Объём — 13 тонна; сумма — 467 992 896,26 UZS.",
+      "passed": true
+    },
+    {
+      "id": "future_data_absent",
+      "language": "ru",
+      "question": "Какой оборот биржи в 2027 году?",
+      "expected": {
+        "outcome": "insufficient_data",
+        "reason": "Trade data end on 2026-10-30. Do not report zero or make a forecast."
+      },
+      "status": "no_data",
+      "actual_rows": [],
+      "actual_answer": "В наборе нет данных за запрошенный период. Реестр сделок охватывает 03.01.2022–30.10.2026; отсутствие периода нельзя выдавать за нулевой оборот.",
+      "passed": true
+    },
+    {
+      "id": "profit_data_absent",
+      "language": "ru",
+      "question": "Какова чистая прибыль продавца по сделке №100001?",
+      "expected": {
+        "outcome": "insufficient_data",
+        "reason": "Revenue is present; costs, expenses and tax amounts required for net profit are absent."
+      },
+      "status": "no_data",
+      "actual_rows": [],
+      "actual_answer": "В наборе нет себестоимости, расходов и сумм налогов для расчёта чистой прибыли. Сумма сделки не является прибылью.",
+      "passed": true
+    },
+    {
+      "id": "count_2025",
+      "language": "ru",
+      "question": "Сколько сделок зарегистрировано в 2025 году, включая все состояния?",
+      "expected": {
+        "count": 115763
+      },
+      "status": "answer",
+      "actual_rows": [
+        {
+          "deals": 115763
+        }
+      ],
+      "actual_answer": "По выбранным условиям — 115 763 сделок.",
+      "passed": true
+    },
+    {
+      "id": "cancelled_2025",
+      "language": "ru",
+      "question": "Сколько сделок 2025 года аннулировано из-за неоплаты?",
+      "expected": {
+        "count": 8085
+      },
+      "status": "answer",
+      "actual_rows": [
+        {
+          "deals": 8085
+        }
+      ],
+      "actual_answer": "По выбранным условиям — 8 085 сделок.",
+      "passed": true
+    },
+    {
+      "id": "export_2025",
+      "language": "ru",
+      "question": "Какова сумма экспортных сделок 2025 года в сумах, включая аннулированные?",
+      "expected": {
+        "count": 1367,
+        "amount_uzs_exact": "2740766106533.9551",
+        "amount_uzs_2dp": "2740766106533.96"
+      },
+      "status": "answer",
+      "actual_rows": [
+        {
+          "deals": 1367,
+          "amount": "2740766106533.95510000"
+        }
+      ],
+      "actual_answer": "Сумма зарегистрированных сделок — 2 740 766 106 533,96 UZS; учтено 1 367 сделок.",
+      "passed": true
+    },
+    {
+      "id": "all_years_count",
+      "language": "ru",
+      "question": "Сколько сделок во всём наборе, включая все состояния?",
+      "expected": {
+        "count": 500000
+      },
+      "status": "answer",
+      "actual_rows": [
+        {
+          "deals": 500000
+        }
+      ],
+      "actual_answer": "По выбранным условиям — 500 000 сделок.",
+      "passed": true
+    },
+    {
+      "id": "all_years_registered_amount",
+      "language": "ru",
+      "question": "Какова сумма всех зарегистрированных сделок за весь период в сумах, включая аннулированные?",
+      "expected": {
+        "amount_uzs_exact": "220477157554431.7867",
+        "amount_uzs_2dp": "220477157554431.79"
+      },
+      "status": "answer",
+      "actual_rows": [
+        {
+          "deals": 500000,
+          "amount": "220477157554431.78670000"
+        }
+      ],
+      "actual_answer": "Сумма зарегистрированных сделок — 220 477 157 554 431,79 UZS; учтено 500 000 сделок.",
+      "passed": true
+    },
+    {
+      "id": "broker_unique_deals_2025",
+      "language": "ru",
+      "question": "В скольких уникальных сделках 2025 года участвовал брокер BK001 с любой стороны, включая все состояния?",
+      "expected": {
+        "distinct_deals": 1170,
+        "seller_side_count": 426,
+        "buyer_side_count": 748,
+        "both_sides_count": 4
+      },
+      "status": "answer",
+      "actual_rows": [
+        {
+          "deals": 1170
+        }
+      ],
+      "actual_answer": "По выбранным условиям — 1 170 сделок.",
+      "passed": true
+    },
+    {
+      "id": "count_2024",
+      "language": "uz",
+      "question": "2024-yilda barcha holatlarni hisobga olganda nechta bitim qayd etilgan?",
+      "expected": {
+        "count": 106647
+      },
+      "status": "answer",
+      "actual_rows": [
+        {
+          "deals": 106647
+        }
+      ],
+      "actual_answer": "Tanlangan shartlar bo‘yicha 106 647 ta bitim.",
+      "passed": true
+    },
+    {
+      "id": "cancelled_2024",
+      "language": "uz",
+      "question": "2024-yildagi nechta bitim to‘lov bo‘lmagani sababli bekor qilingan?",
+      "expected": {
+        "count": 7323
+      },
+      "status": "answer",
+      "actual_rows": [
+        {
+          "deals": 7323
+        }
+      ],
+      "actual_answer": "Tanlangan shartlar bo‘yicha 7 323 ta bitim.",
+      "passed": true
+    },
+    {
+      "id": "forms_2024",
+      "language": "uz",
+      "question": "2024-yildagi bitimlar sonini shartnoma shakllari bo‘yicha, barcha holatlarni hisobga olib ko‘rsating.",
+      "expected": {
+        "Спот": 98384,
+        "Форвард": 7858,
+        "Фьючерс": 405
+      },
+      "status": "answer",
+      "actual_rows": [
+        {
+          "id": "Спот",
+          "label": "Спот",
+          "deals": 98384
+        },
+        {
+          "id": "Форвард",
+          "label": "Форвард",
+          "deals": 7858
+        },
+        {
+          "id": "Фьючерс",
+          "label": "Фьючерс",
+          "deals": 405
+        }
+      ],
+      "actual_answer": "Bitimlar soni bo‘yicha yetakchi (shartnoma shakllari): Спот — 98 384 ta bitim. 106 647 ta bitim hisobga olindi; 3 qator ko‘rsatilgan.",
+      "passed": true
+    },
+    {
+      "id": "export_2024",
+      "language": "uz",
+      "question": "2024-yildagi eksport bitimlarining, bekor qilinganlarini ham qo‘shganda, so‘mdagi jami summasi qancha?",
+      "expected": {
+        "count": 1327,
+        "amount_uzs_exact": "2621400340149.8958",
+        "amount_uzs_2dp": "2621400340149.90"
+      },
+      "status": "answer",
+      "actual_rows": [
+        {
+          "deals": 1327,
+          "amount": "2621400340149.89580000"
+        }
+      ],
+      "actual_answer": "Qayd etilgan bitimlar summasi — 2 621 400 340 149,90 UZS; 1 327 ta bitim hisobga olindi.",
+      "passed": true
+    },
+    {
+      "id": "largest_domestic_buyer_2024",
+      "language": "uz",
+      "question": "2024-yilda bekor qilingan bitimlarni hisobga olmaganda ichki bitimlar summasi bo‘yicha eng yirik xaridor kim?",
+      "expected": {
+        "inn": "983531029",
+        "name": "\"Zoket Invest\" OK",
+        "amount_uzs": "1127417344173.29"
+      },
+      "status": "answer",
+      "actual_rows": [
+        {
+          "id": "983531029",
+          "label": "\"Zoket Invest\" OK",
+          "deals": 2014,
+          "amount": "1127417344173.29000000"
+        }
+      ],
+      "actual_answer": "Bitimlar summasi bo‘yicha yetakchi (xaridorlar): \"Zoket Invest\" OK (STIR 983531029) — 1 127 417 344 173,29 UZS. 98 095 ta bitim hisobga olindi; 1 qator ko‘rsatilgan.",
+      "passed": true
+    },
+    {
+      "id": "late_fulfilled_2024",
+      "language": "uz",
+      "question": "2024-yildagi to‘liq bajarilgan bitimlardan nechtasi shartnoma kartochkasidagi yetkazib berish muddatidan kech yetkazilgan?",
+      "expected": {
+        "count": 3759
+      },
+      "status": "answer",
+      "actual_rows": [
+        {
+          "deals": 3759
+        }
+      ],
+      "actual_answer": "Tanlangan shartlar bo‘yicha 3 759 ta bitim.",
+      "passed": true
+    },
+    {
+      "id": "weighted_diesel_price_2024",
+      "language": "uz",
+      "question": "2024-yildagi ichki bitimlar bo‘yicha, bekor qilinganlarini hisobga olmasdan, dizel yoqilg‘isining bir kilogramm uchun o‘rtacha tortilgan narxi qancha?",
+      "expected": {
+        "matched_deals": 5604,
+        "amount_uzs": "2081509050779",
+        "quantity_kg": "169355794",
+        "price_uzs_per_kg_2dp": "12290.75"
+      },
+      "status": "answer",
+      "actual_rows": [
+        {
+          "deals": 5604,
+          "amount": "2081509050779.00000000",
+          "quantity": "169355794.0000",
+          "unit": "килограмм",
+          "price": "12290.74601828503133468229614"
+        }
+      ],
+      "actual_answer": "O‘rtacha tortilgan narx — 12 290,75 UZS / килограмм. Hisob: bitimlar summasi ÷ jami fizik hajm.",
+      "passed": true
+    },
+    {
+      "id": "nonunit_lot_volume",
+      "language": "uz",
+      "question": "100007-raqamli bitim hajmi o‘lchov birligida qancha?",
+      "expected": {
+        "deal_id": "100007",
+        "quantity_lots": "48",
+        "lot_size": "1000",
+        "physical_volume": "48000",
+        "unit": "штука"
+      },
+      "status": "answer",
+      "actual_rows": [
+        {
+          "deal_id": 100007,
+          "deal_date": "2022-01-03",
+          "deal_time": "10:52:43",
+          "product_label": "Кирпич керамический М-100",
+          "quantity": "48000.0000",
+          "unit": "штука",
+          "amount": "35520000.00000000",
+          "status": "Исполнен",
+          "seller_name": "QITOKI QURILISH MCHJ",
+          "buyer_name": "\"Pozok Trade\" MChJ",
+          "price": "740.0000"
+        }
+      ],
+      "actual_answer": "03.01.2022 sanasidagi №100007 bitim: Кирпич керамический М-100. Hajm — 48 000 штука; summa — 35 520 000,00 UZS.",
+      "passed": true
+    },
+    {
+      "id": "usd_rate_snapshot",
+      "language": "uz",
+      "question": "Ma’lumotlarda 2026-yil 30-oktabr uchun dollar kursi qancha?",
+      "expected": {
+        "rate_uzs_per_usd": "13369.54"
+      },
+      "status": "answer",
+      "actual_rows": [
+        {
+          "rate_date": "2026-10-30",
+          "usd_rate": "13369.5400"
+        }
+      ],
+      "actual_answer": "30.10.2026 sanasidagi kurs: 1 USD = 13 369,54 UZS. Kurs berilgan to‘plamdan olingan; bu o‘ylab topilgan, joriy bozor qiymatlari emas.",
+      "passed": true
+    },
+    {
+      "id": "export_deal_conversion",
+      "language": "uz",
+      "question": "100024-raqamli bitim summasini bitim sanasidagi ma’lumotlar to‘plami kursi bo‘yicha so‘mga o‘giring.",
+      "expected": {
+        "deal_id": "100024",
+        "amount_usd": "43176.64",
+        "rate_uzs_per_usd": "10839.03",
+        "amount_uzs_exact": "467992896.2592"
+      },
+      "status": "answer",
+      "actual_rows": [
+        {
+          "deal_id": 100024,
+          "deal_date": "2022-01-03",
+          "deal_time": "11:31:50",
+          "product_label": "Пряжа хлопковая Марка Ne 20/1",
+          "quantity": "13.0000",
+          "unit": "тонна",
+          "amount": "467992896.25920000",
+          "status": "Исполнен",
+          "seller_name": "\"ФАЮМ АГРО\" МЧЖ",
+          "buyer_name": "\"Reshoyi Savdo\" MChJ",
+          "price": "35999453.5584"
+        }
+      ],
+      "actual_answer": "03.01.2022 sanasidagi №100024 bitim: Пряжа хлопковая Марка Ne 20/1. Hajm — 13 тонна; summa — 467 992 896,26 UZS.",
+      "passed": true
+    },
+    {
+      "id": "future_data_absent",
+      "language": "uz",
+      "question": "2027-yilda birja aylanmasi qancha?",
+      "expected": {
+        "outcome": "insufficient_data",
+        "reason": "Trade data end on 2026-10-30. Do not report zero or make a forecast."
+      },
+      "status": "no_data",
+      "actual_rows": [],
+      "actual_answer": "So‘ralgan davr uchun ma’lumot yo‘q. Bitimlar reyestri 03.01.2022–30.10.2026 davrini qamrab oladi; mavjud bo‘lmagan davr aylanmasini nol deb bo‘lmaydi.",
+      "passed": true
+    },
+    {
+      "id": "profit_data_absent",
+      "language": "uz",
+      "question": "100001-raqamli bitim bo‘yicha sotuvchining sof foydasi qancha?",
+      "expected": {
+        "outcome": "insufficient_data",
+        "reason": "Revenue is present; costs, expenses and tax amounts required for net profit are absent."
+      },
+      "status": "no_data",
+      "actual_rows": [],
+      "actual_answer": "To‘plamda sof foydani hisoblash uchun tannarx, xarajatlar va soliq summalari yo‘q. Bitim summasi foyda emas.",
+      "passed": true
+    },
+    {
+      "id": "count_2025",
+      "language": "uz",
+      "question": "2025-yilda barcha holatlarni hisobga olganda nechta bitim qayd etilgan?",
+      "expected": {
+        "count": 115763
+      },
+      "status": "answer",
+      "actual_rows": [
+        {
+          "deals": 115763
+        }
+      ],
+      "actual_answer": "Tanlangan shartlar bo‘yicha 115 763 ta bitim.",
+      "passed": true
+    },
+    {
+      "id": "cancelled_2025",
+      "language": "uz",
+      "question": "2025-yildagi nechta bitim to‘lov bo‘lmagani sababli bekor qilingan?",
+      "expected": {
+        "count": 8085
+      },
+      "status": "answer",
+      "actual_rows": [
+        {
+          "deals": 8085
+        }
+      ],
+      "actual_answer": "Tanlangan shartlar bo‘yicha 8 085 ta bitim.",
+      "passed": true
+    },
+    {
+      "id": "export_2025",
+      "language": "uz",
+      "question": "2025-yildagi eksport bitimlarining, bekor qilinganlarini ham qo‘shganda, so‘mdagi jami summasi qancha?",
+      "expected": {
+        "count": 1367,
+        "amount_uzs_exact": "2740766106533.9551",
+        "amount_uzs_2dp": "2740766106533.96"
+      },
+      "status": "answer",
+      "actual_rows": [
+        {
+          "deals": 1367,
+          "amount": "2740766106533.95510000"
+        }
+      ],
+      "actual_answer": "Qayd etilgan bitimlar summasi — 2 740 766 106 533,96 UZS; 1 367 ta bitim hisobga olindi.",
+      "passed": true
+    },
+    {
+      "id": "all_years_count",
+      "language": "uz",
+      "question": "Ma’lumotlar to‘plamida barcha holatlarni hisobga olganda jami nechta bitim bor?",
+      "expected": {
+        "count": 500000
+      },
+      "status": "answer",
+      "actual_rows": [
+        {
+          "deals": 500000
+        }
+      ],
+      "actual_answer": "Tanlangan shartlar bo‘yicha 500 000 ta bitim.",
+      "passed": true
+    },
+    {
+      "id": "all_years_registered_amount",
+      "language": "uz",
+      "question": "Butun davr davomida qayd etilgan barcha bitimlarning, bekor qilinganlarini ham qo‘shganda, so‘mdagi jami summasi qancha?",
+      "expected": {
+        "amount_uzs_exact": "220477157554431.7867",
+        "amount_uzs_2dp": "220477157554431.79"
+      },
+      "status": "answer",
+      "actual_rows": [
+        {
+          "deals": 500000,
+          "amount": "220477157554431.78670000"
+        }
+      ],
+      "actual_answer": "Qayd etilgan bitimlar summasi — 220 477 157 554 431,79 UZS; 500 000 ta bitim hisobga olindi.",
+      "passed": true
+    },
+    {
+      "id": "broker_unique_deals_2025",
+      "language": "uz",
+      "question": "2025-yilda BK001 brokeri istalgan tomon sifatida, barcha holatlarni hisobga olganda, nechta noyob bitimda qatnashgan?",
+      "expected": {
+        "distinct_deals": 1170,
+        "seller_side_count": 426,
+        "buyer_side_count": 748,
+        "both_sides_count": 4
+      },
+      "status": "answer",
+      "actual_rows": [
+        {
+          "deals": 1170
+        }
+      ],
+      "actual_answer": "Tanlangan shartlar bo‘yicha 1 170 ta bitim.",
+      "passed": true
+    }
+  ]
+}

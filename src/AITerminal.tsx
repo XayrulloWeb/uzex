@@ -6,9 +6,11 @@ import { csvDownload, exact, integer } from './lib';
 type Cell = string | number | null;
 type AIResponse = {
   status: 'answer' | 'no_data' | 'clarify' | 'unavailable';
+  reason?: string;
   answer: string;
   columns: { key: string; label: string; kind: string; unit?: string }[];
   rows: Record<string, Cell>[];
+  interpretation?: string[];
   elapsed_ms?: number;
   provider?: { kind?: 'gemini' | 'local'; model: string; attempts: number; used_backup: boolean };
   provenance: null | {
@@ -93,7 +95,8 @@ export default function AITerminal({
       const data = await response.json();
       if (!data.answer) throw new Error('Invalid response');
       setAnswer(data);
-      if (response.ok) setHistory((previous) => [...previous, text.trim()].slice(-4));
+      if (response.ok && data.status === 'answer')
+        setHistory((previous) => [...previous, text.trim()].slice(-4));
     } catch {
       if (!c.signal.aborted || controller.current === c)
         setAnswer({
@@ -213,7 +216,9 @@ export default function AITerminal({
                 : answer.status === 'no_data'
                   ? t('ДАННЫХ НЕДОСТАТОЧНО', 'MA’LUMOT YETARLI EMAS')
                   : answer.status === 'clarify'
-                    ? t('НУЖНО УТОЧНЕНИЕ', 'ANIQLASHTIRISH KERAK')
+                    ? answer.reason === 'question_mismatch'
+                      ? t('ОТВЕТ НЕ ПРОШЁЛ ПРОВЕРКУ', 'JAVOB TEKSHIRUVDAN O‘TMADI')
+                      : t('НУЖНО УТОЧНЕНИЕ', 'ANIQLASHTIRISH KERAK')
                     : t('СЕРВИС НЕДОСТУПЕН', 'XIZMAT MAVJUD EMAS')}
             </span>
             {answer.elapsed_ms !== undefined && (
@@ -225,6 +230,16 @@ export default function AITerminal({
           <p className={answer.status === 'answer' ? 'ai-answer-summary' : undefined}>
             {answer.answer}
           </p>
+          {!!answer.interpretation?.length && (
+            <div
+              className="ai-conditions"
+              aria-label={t('Параметры расчёта', 'Hisob-kitob shartlari')}
+            >
+              {answer.interpretation.map((condition, index) => (
+                <span key={index}>{condition}</span>
+              ))}
+            </div>
+          )}
           {answer.provenance?.period?.from && (
             <div className="ai-result-period">
               {periodLabel}: {answer.provenance.period.from} — {answer.provenance.period.to}
@@ -236,7 +251,9 @@ export default function AITerminal({
                 {t('Подтверждающие данные', 'Tasdiqlovchi ma’lumotlar')}
               </div>
               <div className="table-scroll">
-                <table className="report-table">
+                <table
+                  className={`report-table${answer.columns.length <= 2 ? ' ai-compact-table' : ''}`}
+                >
                   <thead>
                     <tr>
                       {answer.columns.map((c) => (

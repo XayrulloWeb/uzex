@@ -6,9 +6,10 @@ from datetime import date
 from decimal import Decimal
 from functools import lru_cache
 
-from server.ai_models import AIQuestion, QueryPlan, chronological_metric, local_chronology_plan, money
+from server.ai_models import AIQuestion, QueryPlan, chronological_metric, local_chronology_plan, local_count_plan, money
 from server.catalog import CANCELLED, SNAPSHOT, commodity_label, normalize, region_label
 from server.db import query
+from server.question_checks import QuestionMismatch, calendar_mentions, question_text, relative_period, validate_question
 
 
 def outcome(reason: str, lang='ru', kind='no_data'):
@@ -21,6 +22,7 @@ def outcome(reason: str, lang='ru', kind='no_data'):
         'currency': ('Уточните валюту: общие суммы можно сопоставить в UZS. Для отчёта в USD выберите экспортные долларовые сделки.', 'Valyutani aniqlashtiring: umumiy summalar UZSda solishtiriladi. USD hisobot uchun eksportdagi dollar bitimlarini tanlang.'),
         'date': ('Укажите точную дату или интервал для курса доллара.', 'Dollar kursi uchun aniq sana yoki oraliqni ko‘rsating.'),
         'unknown': ('Не удалось надёжно сопоставить вопрос с доступными полями. Уточните период, товар и требуемый показатель. Это не означает, что данных нет.', 'Savolni mavjud maydonlar bilan ishonchli bog‘lab bo‘lmadi. Davr, tovar va kerakli ko‘rsatkichni aniqlashtiring. Bu ma’lumot yo‘qligini anglatmaydi.'),
+        'question_mismatch': ('Не удалось подтвердить, что расчёт учитывает все условия вопроса. Уточните запрос; непроверенные числа не показаны. Это не означает, что данных нет.', 'Hisob-kitob savolning barcha shartlarini hisobga olishini tasdiqlab bo‘lmadi. So‘rovni aniqlashtiring; tekshirilmagan raqamlar ko‘rsatilmaydi. Bu ma’lumot yo‘qligini anglatmaydi.'),
     }
     ru, uz = texts.get(reason, texts['unknown'])
     return {'status': kind, 'answer': uz if lang == 'uz' else ru, 'columns': [], 'rows': [], 'provenance': None, 'reason': reason}
@@ -28,19 +30,20 @@ def outcome(reason: str, lang='ru', kind='no_data'):
 
 def constrain_request(request: AIQuestion, plan: QueryPlan):
     """Do not trust a model to omit an explicit year or invent an identifier."""
-    q = normalize(request.question)
+    q = question_text(request.question)
     context = normalize(' '.join([request.question]+request.history))
+    identifier_context = normalize(' '.join([request.question]+request.history).replace('№',' '))
     for field in ['deal_id', 'contract_id', 'participant_inn', 'broker_code']:
         value = getattr(plan, field)
-        if value is not None and not re.search(r'(?<!\w)'+re.escape(str(value).casefold())+r'(?!\w)', context):
-            raise ValueError('Identifier not supplied by user')
+        if value is not None and not re.search(r'(?<!\w)'+re.escape(str(value).casefold())+r'(?!\w)', identifier_context):
+            raise QuestionMismatch('identifier_not_supplied')
     if plan.company_name and normalize(plan.company_name) not in context:
-        raise ValueError('Company name not supplied by user')
+        raise QuestionMismatch('company_not_supplied')
     if plan.action == 'query':
-        exact_chronology = local_chronology_plan(request)
-        if exact_chronology:
-            plan = exact_chronology
-        elif metric := chronological_metric(request.question):
+        exact_plan = local_chronology_plan(request) or local_count_plan(request)
+        if exact_plan:
+            plan = exact_plan
+        elif metric := chronological_metric(q):
             plan.metric = metric
             plan.order = 'asc' if metric == 'first_deal' else 'desc'
             plan.limit = 1
@@ -49,21 +52,29 @@ def constrain_request(request: AIQuestion, plan: QueryPlan):
         requested = years[0]
         if plan.date_from or plan.date_to:
             if any(d.year != requested for d in [plan.date_from, plan.date_to] if d):
-                raise ValueError('Model changed requested year')
-        else:
-            plan.year = requested
-    elif len(set(years)) > 1 and not plan.date_from:
+                raise QuestionMismatch('requested_year')
+        plan.year = requested
+    elif len(set(years)) > 1:
         plan.year = None
-        plan.date_from, plan.date_to = date(min(years), 1, 1), date(max(years), 12, 31)
-    all_time=bool(re.search(r'вс[её]м наборе|весь период|все годы|вс[её] время|всему набору|butun davr|barcha davr|all time', q))
-    if all_time:
+        if not plan.date_from:
+            plan.date_from, plan.date_to = date(min(years), 1, 1), date(max(years), 12, 31)
+    all_time=bool(re.search(r'вс[её]м (?:наборе|реестре)|весь период|все годы|вс[её] время|всему набору|butun (?:davr|to\'plam|reyestr)|barcha (?:davr|yil)|ma\'lumotlar to\'plamida|all time', q))
+    if all_time and not years:
         plan.year = None
-        if not years:
-            plan.date_from = plan.date_to = None
+        plan.date_from = plan.date_to = None
+    elif plan.deal_id and not years and not any(calendar_mentions(q)) and not relative_period(q):
+        plan.year = plan.date_from = plan.date_to = None
+    elif not years and not all_time and not relative_period(q):
+        plan.year = request.scope.year
+        if not any(calendar_mentions(q)) and (plan.date_from or plan.date_to):
+            raise QuestionMismatch('unexpected_date_range')
     elif not years and plan.year is None and not plan.date_from and not plan.date_to:
         plan.year=request.scope.year
-    if plan.region is None: plan.region=request.scope.region
-    if plan.commodity is None: plan.commodity=request.scope.commodity
+    if plan.region is None and not plan.deal_id: plan.region=request.scope.region
+    if plan.commodity is None and not plan.deal_id: plan.commodity=request.scope.commodity
+    if plan.brand and (brand:=re.fullmatch(r'(?:аи|ai)[-– ]?(\d{2,3})',normalize(plan.brand))):
+        plan.brand='АИ-'+brand.group(1)
+    validate_question(request,plan)
     return plan
 
 
@@ -94,18 +105,31 @@ def date_text(value):
 
 
 def scope_text(plan, lang):
-    if plan.year:
-        return f'за {plan.year} год' if lang=='ru' else f'{plan.year}-yilda'
     if plan.date_from and plan.date_to:
         return f'за период {date_text(plan.date_from)}–{date_text(plan.date_to)}' if lang=='ru' else f'{date_text(plan.date_from)}–{date_text(plan.date_to)} davrida'
     if plan.date_from:
         return f'начиная с {date_text(plan.date_from)}' if lang=='ru' else f'{date_text(plan.date_from)} sanasidan boshlab'
     if plan.date_to:
         return f'по {date_text(plan.date_to)} включительно' if lang=='ru' else f'{date_text(plan.date_to)} sanasigacha'
+    if plan.year:
+        return f'за {plan.year} год' if lang=='ru' else f'{plan.year}-yilda'
     return 'во всём предоставленном наборе' if lang=='ru' else 'berilgan butun to‘plamda'
 
 
-def record_answer(plan, rows, total, lang):
+def requested_record_facts(plan, row, lang, question):
+    q = question_text(question)
+    facts = []
+    if re.search(r'\bсумм|\bsumma',q):
+        facts.append(('Сумма — ' if lang=='ru' else 'Summa — ')+money(row['amount'])+' '+plan.report_currency+'.')
+    if re.search(r'\bобъем|\bhajm',q):
+        facts.append(('Объём — ' if lang=='ru' else 'Hajm — ')+money(row['quantity'],4).rstrip('0').rstrip(',')+' '+row['unit']+'.')
+    if re.search(r'\bцен|\bnarx',q) and Decimal(row['quantity']):
+        price = Decimal(row['amount'])/Decimal(row['quantity'])
+        facts.append(('Цена — ' if lang=='ru' else 'Narx — ')+money(price)+' '+plan.report_currency+' / '+row['unit']+'.')
+    return ' '+ ' '.join(facts) if facts else ''
+
+
+def record_answer(plan, rows, total, lang, question=''):
     """Answer the selected operation directly, using only computed facts."""
     row = rows[0]
     scope = scope_text(plan, lang)
@@ -114,18 +138,19 @@ def record_answer(plan, rows, total, lang):
     uz_kind = 'eksport bitimi' if plan.contract_type=='Экспортный' else 'ichki bitim' if plan.contract_type=='Внутренний' else 'bitim'
     if plan.metric in ['first_deal', 'last_deal']:
         first = plan.metric=='first_deal'
+        facts = requested_record_facts(plan,row,lang,question)
         if plan.date_field=='deal_date':
             clock = f" в {row['deal_time']}" if row.get('deal_time') else ''
             if lang=='ru':
-                return f"{'Первая' if first else 'Последняя'} зарегистрированная {kind} {scope} — {day}{clock}, №{row['deal_id']}."
+                return f"{'Первая' if first else 'Последняя'} зарегистрированная {kind} {scope} — {day}{clock}, №{row['deal_id']}."+facts
             clock = f", soat {row['deal_time']}" if row.get('deal_time') else ''
-            return f"{scope[0].upper()+scope[1:]} {'birinchi' if first else 'oxirgi'} {uz_kind} — {day}{clock}; bitim №{row['deal_id']}."
+            return f"{scope[0].upper()+scope[1:]} {'birinchi' if first else 'oxirgi'} {uz_kind} — {day}{clock}; bitim №{row['deal_id']}."+facts
         activity = date_text(row['activity_date'])
         name = 'оплаты' if plan.date_field=='payment_date' else 'поставки'
         uz_name = 'to‘lov' if plan.date_field=='payment_date' else 'yetkazib berish'
         if lang=='ru':
-            return f"Самая {'ранняя' if first else 'поздняя'} дата {name} {scope} — {activity}. Подтверждение: сделка №{row['deal_id']} от {day}."
-        return f"{scope[0].upper()+scope[1:]} eng {'erta' if first else 'kech'} {uz_name} sanasi — {activity}. Dalil: {day} sanasidagi №{row['deal_id']} bitim."
+            return f"Самая {'ранняя' if first else 'поздняя'} дата {name} {scope} — {activity}. Подтверждение: сделка №{row['deal_id']} от {day}."+facts
+        return f"{scope[0].upper()+scope[1:]} eng {'erta' if first else 'kech'} {uz_name} sanasi — {activity}. Dalil: {day} sanasidagi №{row['deal_id']} bitim."+facts
     if plan.metric in ['min_amount', 'max_amount']:
         if lang=='ru':
             return f"{'Крупнейшая' if plan.metric=='max_amount' else 'Наименьшая'} по сумме {kind} {scope} — №{row['deal_id']} от {day}: {money(row['amount'])} {plan.report_currency}."
@@ -156,7 +181,7 @@ def execute_plan(plan: QueryPlan, request: AIQuestion):
         # A named whole year/month may extend past the snapshot; expose the actual end.
         if plan.date_to.year == 2026 and plan.date_to.month <= 10:
             plan.date_to = last
-        elif plan.year == 2026 and not plan.date_from:
+        elif (plan.year == 2026 and not plan.date_from) or (plan.date_to==date(2026,12,31) and not any(calendar_mentions(question_text(request.question)))):
             plan.date_to = last
         else:
             return outcome('out_of_period', lang)
@@ -173,7 +198,7 @@ def execute_plan(plan: QueryPlan, request: AIQuestion):
             row = rows[0]
             fact = f"Курс на {date_text(row['rate_date'])}: 1 USD = {money(row['usd_rate'])} UZS." if not uz else f"{date_text(row['rate_date'])} sanasidagi kurs: 1 USD = {money(row['usd_rate'])} UZS."
             answer = fact+' '+answer
-        return result(answer, rows, [column('rate_date',lang), column('usd_rate',lang,'decimal')], sql, parameters, len(rows), plan)
+        return result(answer, rows, [column('rate_date',lang), column('usd_rate',lang,'decimal')], sql, parameters, len(rows), plan, lang=lang)
     if plan.metric in ['weighted_price', 'min_price', 'max_price'] and not (plan.commodity or plan.contract_id or plan.product_text):
         return outcome('need_product', lang, 'clarify')
 
@@ -194,6 +219,8 @@ def execute_plan(plan: QueryPlan, request: AIQuestion):
         matches = resolve_company(plan.company_name)
         if len(matches) != 1:
             return outcome('ambiguous_entity' if matches else 'not_found', lang, 'clarify' if matches else 'no_data')
+        if plan.participant_inn and plan.participant_inn!=matches[0][0]:
+            return outcome('ambiguous_entity',lang,'clarify')
         plan.participant_inn = matches[0][0]
     if plan.participant_inn:
         if not query('SELECT inn FROM participants WHERE inn=?',[plan.participant_inn]): return outcome('not_found',lang)
@@ -234,7 +261,7 @@ def execute_plan(plan: QueryPlan, request: AIQuestion):
     if total['count']==0 and (plan.metric!='count' or plan.deal_id or plan.contract_id or plan.brand or plan.product_text):
         return outcome('not_found',lang)
     if plan.metric in ['detail','records','first_deal','last_deal','min_price','max_price','min_amount','max_amount']:
-        return record_result(plan, lang, condition, parameters, amount, quantity, unit, total)
+        return record_result(plan, lang, condition, parameters, amount, quantity, unit, total, request.question)
     return aggregate_result(plan, lang, condition, parameters, amount, quantity, unit, total)
 
 
@@ -306,10 +333,10 @@ def aggregate_result(plan, lang, condition, parameters, amount, quantity, unit, 
             answer = f"{measure[1][0].upper()+measure[1][1:]} bo‘yicha {'yetakchi' if plan.order=='desc' else 'eng kichik natija'} ({groups[plan.group][1]}): {row['label']}{identifier} — {value}. {money(total['count'],0)} ta bitim hisobga olindi; {len(rows)} qator ko‘rsatilgan."
     else:
         answer = f"Учтено {money(total['count'],0)} сделок. Показано строк: {len(rows)}. Единицы измерения учитываются отдельно." if lang=='ru' else f"{money(total['count'],0)} ta bitim hisobga olindi. Ko‘rsatilgan qatorlar: {len(rows)}. O‘lchov birliklari alohida hisoblanadi."
-    return result(answer,rows,columns,sql,actual_params,total['count'],plan,{'from':total['first_date'],'to':total['last_date']})
+    return result(answer,rows,columns,sql,actual_params,total['count'],plan,{'from':total['first_date'],'to':total['last_date']},lang=lang)
 
 
-def record_result(plan, lang, condition, parameters, amount, quantity, unit, total):
+def record_result(plan, lang, condition, parameters, amount, quantity, unit, total, question=''):
     if plan.metric=='detail' and plan.deal_id is None and plan.contract_id is None:
         return outcome('unknown',lang,'clarify')
     if plan.metric in ['min_price','max_price']:
@@ -344,13 +371,54 @@ def record_result(plan, lang, condition, parameters, amount, quantity, unit, tot
         for row in rows:
             row['price']=format(Decimal(row['amount'])/Decimal(row['quantity']), 'f') if Decimal(row['quantity']) else None
         c=column('price',lang,'decimal');c['unit']=plan.report_currency;columns.append(c)
-    answer = record_answer(plan, rows, total, lang)
-    return result(answer,rows,columns,sql,actual_params,total['count'],plan,{'from':total['first_date'],'to':total['last_date']})
+    answer = record_answer(plan, rows, total, lang, question)
+    return result(answer,rows,columns,sql,actual_params,total['count'],plan,{'from':total['first_date'],'to':total['last_date']},lang=lang)
 
 
-def result(answer, rows, columns, sql, parameters, count, plan, period=None):
+def plan_context(plan,lang):
+    uz = lang=='uz'
+    metrics = {'count':('Число сделок','Bitimlar soni'), 'amount':('Сумма сделок','Bitimlar summasi'),
+               'volume':('Физический объём','Fizik hajm'), 'weighted_price':('Средневзвешенная цена','O‘rtacha tortilgan narx'),
+               'min_price':('Минимальная цена','Eng past narx'), 'max_price':('Максимальная цена','Eng yuqori narx'),
+               'min_amount':('Минимальная сумма сделки','Eng kichik bitim summasi'), 'max_amount':('Максимальная сумма сделки','Eng katta bitim summasi'),
+               'first_deal':('Первая сделка','Birinchi bitim'), 'last_deal':('Последняя сделка','Oxirgi bitim'),
+               'detail':('Карточка сделки','Bitim kartochkasi'), 'records':('Список сделок','Bitimlar ro‘yxati'),
+               'late_delivery':('Завершённые поставки с опозданием','Kech yakunlangan yetkazishlar'),
+               'rate':('Курс из набора данных','To‘plamdagi kurs'), 'participant':('Участник','Ishtirokchi'),
+               'broker':('Брокер','Broker'), 'contract':('Контракт','Shartnoma')}
+    labels = [metrics[plan.metric][uz]]
+    for field,prefix in [('deal_id','№'),('contract_id','Shartnoma ' if uz else 'Контракт '),('participant_inn','STIR ' if uz else 'ИНН '),('broker_code','Broker ' if uz else 'Брокер '),('company_name','')]:
+        if value:=getattr(plan,field): labels.append(prefix+str(value))
+    if plan.metric in ['participant','broker','contract']: return labels
+    if plan.metric=='rate':
+        if plan.date_from: labels.append(date_text(plan.date_from)+((' — '+date_text(plan.date_to)) if plan.date_to and plan.date_to!=plan.date_from else ''))
+        return labels
+    labels.append(scope_text(plan,lang))
+    if plan.date_field!='deal_date': labels.append(('По дате оплаты' if plan.date_field=='payment_date' else 'По дате поставки') if not uz else ('To‘lov sanasi bo‘yicha' if plan.date_field=='payment_date' else 'Yetkazish sanasi bo‘yicha'))
+    if plan.contract_type: labels.append(('Eksport' if plan.contract_type=='Экспортный' else 'Ichki') if uz else plan.contract_type)
+    if plan.commodity: labels.append(commodity_label(plan.commodity,lang))
+    if plan.region: labels.append(('Ombor: ' if uz else 'Склад: ')+region_label(plan.region,lang))
+    if plan.group!='none':
+        groups = {'month':('По месяцам','Oylar bo‘yicha'), 'year':('По годам','Yillar bo‘yicha'), 'buyer':('По покупателям','Xaridorlar bo‘yicha'),
+                  'seller':('По продавцам','Sotuvchilar bo‘yicha'), 'broker':('По брокерам','Brokerlar bo‘yicha'), 'region':('По регионам склада','Ombor hududlari bo‘yicha'),
+                  'commodity':('По товарам','Tovarlar bo‘yicha'), 'form':('По формам контракта','Shartnoma shakllari bo‘yicha'), 'status':('По состояниям','Holatlar bo‘yicha'),
+                  'category':('По категориям','Toifalar bo‘yicha'), 'auction':('По видам торгов','Savdo turlari bo‘yicha')}
+        labels.append(groups[plan.group][uz])
+    if plan.statuses:
+        from server.catalog import STATUS_UZ
+        labels.extend(STATUS_UZ.get(status,status) if uz else status for status in plan.statuses)
+    else: labels.append(('Bekor qilinganlarsiz' if not plan.include_cancelled else 'Barcha holatlar') if uz else ('Без аннулированных' if not plan.include_cancelled else 'Все состояния'))
+    if plan.brand: labels.append(('Marka ' if uz else 'Марка ')+plan.brand)
+    if plan.grade: labels.append(('Nav ' if uz else 'Сорт ')+plan.grade)
+    if plan.quality_class: labels.append(('Sinf ' if uz else 'Класс ')+plan.quality_class)
+    if plan.physical_unit: labels.append(plan.physical_unit)
+    if plan.metric in ['amount','weighted_price','min_price','max_price','min_amount','max_amount','detail','records']: labels.append(plan.report_currency)
+    return labels
+
+
+def result(answer, rows, columns, sql, parameters, count, plan, period=None, lang='ru'):
     from server.db import serial
-    return {'status':'answer','answer':answer,'columns':columns,'rows':rows,
+    return {'status':'answer','answer':answer,'columns':columns,'rows':rows,'interpretation':plan_context(plan,lang),
             'provenance': {'sql':sql, 'parameters':serial(parameters), 'row_count':count, 'snapshot':SNAPSHOT,
                            'sources': ['usd_rates.csv'] if plan.metric=='rate' else ['deals_2022…2026.csv','contracts.csv','participants.csv','brokers.csv','usd_rates.csv'],
                            'period':period, 'date_field':plan.date_field, 'currency':plan.report_currency, 'include_cancelled':plan.include_cancelled, 'statuses':plan.statuses,
@@ -364,6 +432,7 @@ def reference_result(plan,lang):
     if plan.metric=='participant' and plan.company_name:
         matches=resolve_company(plan.company_name)
         if len(matches)!=1:return outcome('ambiguous_entity' if matches else 'not_found',lang,'clarify' if matches else 'no_data')
+        if value and value!=matches[0][0]: return outcome('ambiguous_entity',lang,'clarify')
         value=matches[0][0]
     if value is None:return outcome('ambiguous_entity',lang,'clarify')
     sql=f'SELECT * FROM {table} WHERE {key}=?'
@@ -381,7 +450,7 @@ def reference_result(plan,lang):
         if isinstance(cell,bool):cell=('Да' if cell else 'Нет') if lang=='ru' else ('Ha' if cell else 'Yo‘q')
         rows.append({'field':labels[field][lang=='uz'],'value':str(cell) if cell is not None else '—'})
     answer='Карточка из предоставленного справочника. Это сведения текущей выгрузки, не история изменения реквизитов.' if lang=='ru' else 'Berilgan ma’lumotnomadan kartochka. Bu joriy to‘plam ma’lumotlari, rekvizitlarning o‘zgarish tarixi emas.'
-    response=result(answer,rows,[{'key':'field','label':'Поле' if lang=='ru' else 'Maydon','kind':'text'},{'key':'value','label':'Значение' if lang=='ru' else 'Qiymat','kind':'text'}],sql,[value],1,plan)
+    response=result(answer,rows,[{'key':'field','label':'Поле' if lang=='ru' else 'Maydon','kind':'text'},{'key':'value','label':'Значение' if lang=='ru' else 'Qiymat','kind':'text'}],sql,[value],1,plan,lang=lang)
     response['provenance']['sources']=[{'participants':'participants.csv','brokers':'brokers.csv','contracts':'contracts.csv'}[table]]
     response['provenance']['method']='Reference card from the provided dataset; no trade aggregation.'
     return response

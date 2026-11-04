@@ -87,4 +87,6 @@ Gemini подключается через защищённые переменн
 
 AI открывается кнопкой «Задать вопрос AI» на первом экране, пунктом «AI-аналитик» в шапке или кнопкой AI на телефоне. Матрица готовности к конкурсу: [READINESS.md](docs/READINESS.md). Черновик описания для заявки: [SUBMISSION.md](docs/SUBMISSION.md).
 
+Перед SQL независимо проверяются распознанные условия вопроса; отклонённые планы не возвращают непроверенных чисел. В ответе видны применённые параметры. Сквозная сверка 36 RU/UZ случаев и границы проверки: [QUESTION_AUDIT.md](docs/QUESTION_AUDIT.md), фактические результаты: [question-audit.json](docs/question-audit.json). Модельные планы этого отчёта заданы тестами; живое понимание Gemini ещё требует отдельной проверки.
+
 Исходные требования и проверка данных: [DATA_AUDIT.md](docs/DATA_AUDIT.md). Эталоны: [reference-questions.json](docs/reference-questions.json). План следующего этапа: [IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md). Источники карты и шрифтов: [THIRD_PARTY.md](docs/THIRD_PARTY.md).
