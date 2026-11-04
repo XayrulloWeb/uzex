@@ -23,6 +23,7 @@ type AIResponse = {
     statuses?: string[];
     snapshot: string;
     date_field?: 'deal_date' | 'payment_date' | 'delivery_date';
+    method?: string;
   };
 };
 
@@ -117,6 +118,7 @@ export default function AITerminal({
   function formatCell(value: Cell, kind: string) {
     if (value == null) return '—';
     if (kind === 'decimal') return exact(value);
+    if (kind === 'percent') return exact(value, 4);
     if (kind === 'integer') return integer(value);
     return String(value);
   }
@@ -329,6 +331,7 @@ export default function AITerminal({
                   )}
                   <pre>{answer.provenance.sql}</pre>
                   <p className="mono">{JSON.stringify(answer.provenance.parameters)}</p>
+                  {answer.provenance.method && <p>{answer.provenance.method}</p>}
                   {answer.provider && (
                     <p>
                       {answer.provider.kind === 'local'

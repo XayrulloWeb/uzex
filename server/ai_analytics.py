@@ -6,10 +6,11 @@ from datetime import date
 from decimal import Decimal
 from functools import lru_cache
 
-from server.ai_models import AIQuestion, QueryPlan, chronological_metric, local_chronology_plan, local_count_plan, money
+from server.ai_models import AIQuestion, QueryPlan, chronological_metric, explicit_years, local_chronology_plan, local_count_plan, local_ratio_plan, money
 from server.catalog import CANCELLED, SNAPSHOT, commodity_label, normalize, region_label
 from server.db import query
 from server.question_checks import QuestionMismatch, calendar_mentions, question_text, relative_period, validate_question
+from server.ratios import comparison_answer, share_result
 
 
 def outcome(reason: str, lang='ru', kind='no_data'):
@@ -23,6 +24,8 @@ def outcome(reason: str, lang='ru', kind='no_data'):
         'date': ('Укажите точную дату или интервал для курса доллара.', 'Dollar kursi uchun aniq sana yoki oraliqni ko‘rsating.'),
         'unknown': ('Не удалось надёжно сопоставить вопрос с доступными полями. Уточните период, товар и требуемый показатель. Это не означает, что данных нет.', 'Savolni mavjud maydonlar bilan ishonchli bog‘lab bo‘lmadi. Davr, tovar va kerakli ko‘rsatkichni aniqlashtiring. Bu ma’lumot yo‘qligini anglatmaydi.'),
         'question_mismatch': ('Не удалось подтвердить, что расчёт учитывает все условия вопроса. Уточните запрос; непроверенные числа не показаны. Это не означает, что данных нет.', 'Hisob-kitob savolning barcha shartlarini hisobga olishini tasdiqlab bo‘lmadi. So‘rovni aniqlashtiring; tekshirilmagan raqamlar ko‘rsatilmaydi. Bu ma’lumot yo‘qligini anglatmaydi.'),
+        'share_definition': ('Для доли нужны часть и общий итог в одинаковых условиях. Например: доля экспорта по сумме всех сделок или по их числу. Эти показатели можно показать вместе.', 'Ulush uchun bir xil shartlardagi qism va jami kerak. Masalan, eksportning jami summa yoki bitimlar sonidagi ulushi. Ikkalasini birga ko‘rsatish mumkin.'),
+        'share_currency': ('Доля по сумме разно­валютных сделок рассчитывается после приведения всех сумм к UZS по датам сделок. Для доли по числу сделок валюта не требуется.', 'Turli valyutadagi bitimlarning summa ulushi barcha summalar bitim sanasidagi kurs bilan UZSga o‘tkazilgach hisoblanadi. Bitimlar sonidagi ulush uchun valyuta kerak emas.'),
     }
     ru, uz = texts.get(reason, texts['unknown'])
     return {'status': kind, 'answer': uz if lang == 'uz' else ru, 'columns': [], 'rows': [], 'provenance': None, 'reason': reason}
@@ -40,7 +43,7 @@ def constrain_request(request: AIQuestion, plan: QueryPlan):
     if plan.company_name and normalize(plan.company_name) not in context:
         raise QuestionMismatch('company_not_supplied')
     if plan.action == 'query':
-        exact_plan = local_chronology_plan(request) or local_count_plan(request)
+        exact_plan = local_ratio_plan(request) or local_chronology_plan(request) or local_count_plan(request)
         if exact_plan:
             plan = exact_plan
         elif metric := chronological_metric(q):
@@ -72,6 +75,14 @@ def constrain_request(request: AIQuestion, plan: QueryPlan):
         plan.year=request.scope.year
     if plan.region is None and not plan.deal_id: plan.region=request.scope.region
     if plan.commodity is None and not plan.deal_id: plan.commodity=request.scope.commodity
+    plan.years = explicit_years(q) if len(set(years))>1 and not any(calendar_mentions(q)) else []
+    changing = bool(re.search(r'разниц|изменени|вырос|снизил|рост|сравни|farq|o\'zgar|taqqosla|solishtir',q))
+    if len(set(years))>1 and (changing or plan.metric=='share'):
+        plan.group='year';plan.comparison=True
+    if plan.metric=='share' and plan.share_target:
+        field = plan.share_target.dimension
+        if field=='status': plan.statuses=[]
+        else: setattr(plan,field,None)
     if plan.brand and (brand:=re.fullmatch(r'(?:аи|ai)[-– ]?(\d{2,3})',normalize(plan.brand))):
         plan.brand='АИ-'+brand.group(1)
     validate_question(request,plan)
@@ -105,6 +116,8 @@ def date_text(value):
 
 
 def scope_text(plan, lang):
+    if plan.years and plan.years!=list(range(min(plan.years),max(plan.years)+1)):
+        return ('за годы ' if lang=='ru' else 'yillar: ')+', '.join(map(str,plan.years))
     if plan.date_from and plan.date_to:
         return f'за период {date_text(plan.date_from)}–{date_text(plan.date_to)}' if lang=='ru' else f'{date_text(plan.date_from)}–{date_text(plan.date_to)} davrida'
     if plan.date_from:
@@ -208,13 +221,16 @@ def execute_plan(plan: QueryPlan, request: AIQuestion):
     if plan.year: add('year('+plan.date_field+')=?', plan.year)
     if plan.date_from: add(plan.date_field+'>=?', plan.date_from)
     if plan.date_to: add(plan.date_field+'<=?', plan.date_to)
+    if plan.years: add('year('+plan.date_field+') IN ('+','.join('?' for _ in plan.years)+')',*plan.years)
     if plan.metric in ['first_deal', 'last_deal']:
         add(plan.date_field+' IS NOT NULL')
     for field in ['commodity','region','contract_type','form','deal_id','contract_id']:
+        if plan.metric=='share' and plan.share_target and plan.share_target.dimension==field: continue
         value = getattr(plan, field)
         if value is not None: add(field+'=?', value)
     if not plan.include_cancelled: add('status<>?', CANCELLED)
-    if plan.statuses: add('status IN ('+','.join('?' for _ in plan.statuses)+')', *plan.statuses)
+    if plan.statuses and not (plan.metric=='share' and plan.share_target and plan.share_target.dimension=='status'):
+        add('status IN ('+','.join('?' for _ in plan.statuses)+')', *plan.statuses)
     if plan.company_name:
         matches = resolve_company(plan.company_name)
         if len(matches) != 1:
@@ -243,7 +259,9 @@ def execute_plan(plan: QueryPlan, request: AIQuestion):
             parameters.append(r'(^|\s)'+re.escape(value)+r'[- ]*(класс|klass)(\s|$)|\b(класс|klass)\s+'+re.escape(value)+r'(\s|$)')
         conditions.append('('+' OR '.join(checks)+')')
     if plan.metric == 'late_delivery': add('late_delivery=TRUE')
-    if plan.report_currency == 'USD':
+    if plan.metric=='share' and plan.share_target and plan.share_target.dimension=='status' and plan.share_target.value==CANCELLED and not plan.include_cancelled:
+        return outcome('share_definition',lang,'clarify')
+    if plan.report_currency == 'USD' and plan.metric!='share':
         if plan.contract_type != 'Экспортный': return outcome('currency',lang,'clarify')
         add("currency='USD'")
     amount = 'amount_native' if plan.report_currency=='USD' else 'amount_uzs'
@@ -260,6 +278,7 @@ def execute_plan(plan: QueryPlan, request: AIQuestion):
     total = query(f'SELECT count(*) AS count,min({plan.date_field}) AS first_date,max({plan.date_field}) AS last_date FROM trades WHERE '+condition, parameters)[0]
     if total['count']==0 and (plan.metric!='count' or plan.deal_id or plan.contract_id or plan.brand or plan.product_text):
         return outcome('not_found',lang)
+    if plan.metric=='share': return share_result(plan,lang,condition,parameters,total)
     if plan.metric in ['detail','records','first_deal','last_deal','min_price','max_price','min_amount','max_amount']:
         return record_result(plan, lang, condition, parameters, amount, quantity, unit, total, request.question)
     return aggregate_result(plan, lang, condition, parameters, amount, quantity, unit, total)
@@ -302,6 +321,12 @@ def aggregate_result(plan, lang, condition, parameters, amount, quantity, unit, 
     sql='SELECT * FROM ('+inner+') AS aggregates ORDER BY '+ordering+' LIMIT ?'
     actual_params=parameters+[120 if plan.group in ['month','year'] else plan.limit]
     rows=query(sql,actual_params)
+    if plan.comparison and plan.group=='year' and plan.years:
+        if plan.metric=='volume' and len({row['unit'] for row in rows})>1:
+            return outcome('need_product',lang,'clarify')
+        known={int(row['id']):row for row in rows}
+        empty={'deals':0,'amount':'0','quantity':'0','unit':plan.physical_unit or (rows[0].get('unit') if rows else None)}
+        rows=[known.get(year,dict(empty,id=year,label=year)) for year in plan.years]
     for row in rows:
         if plan.group=='region': row['label']=region_label(row['id'],lang)
         if plan.group=='commodity': row['label']=commodity_label(row['id'],lang)
@@ -333,6 +358,7 @@ def aggregate_result(plan, lang, condition, parameters, amount, quantity, unit, 
             answer = f"{measure[1][0].upper()+measure[1][1:]} bo‘yicha {'yetakchi' if plan.order=='desc' else 'eng kichik natija'} ({groups[plan.group][1]}): {row['label']}{identifier} — {value}. {money(total['count'],0)} ta bitim hisobga olindi; {len(rows)} qator ko‘rsatilgan."
     else:
         answer = f"Учтено {money(total['count'],0)} сделок. Показано строк: {len(rows)}. Единицы измерения учитываются отдельно." if lang=='ru' else f"{money(total['count'],0)} ta bitim hisobga olindi. Ko‘rsatilgan qatorlar: {len(rows)}. O‘lchov birliklari alohida hisoblanadi."
+    answer = comparison_answer(plan,rows,lang) or answer
     return result(answer,rows,columns,sql,actual_params,total['count'],plan,{'from':total['first_date'],'to':total['last_date']},lang=lang)
 
 
@@ -377,7 +403,7 @@ def record_result(plan, lang, condition, parameters, amount, quantity, unit, tot
 
 def plan_context(plan,lang):
     uz = lang=='uz'
-    metrics = {'count':('Число сделок','Bitimlar soni'), 'amount':('Сумма сделок','Bitimlar summasi'),
+    metrics = {'share':('Доля в общем итоге','Jami tarkibidagi ulush'),'count':('Число сделок','Bitimlar soni'), 'amount':('Сумма сделок','Bitimlar summasi'),
                'volume':('Физический объём','Fizik hajm'), 'weighted_price':('Средневзвешенная цена','O‘rtacha tortilgan narx'),
                'min_price':('Минимальная цена','Eng past narx'), 'max_price':('Максимальная цена','Eng yuqori narx'),
                'min_amount':('Минимальная сумма сделки','Eng kichik bitim summasi'), 'max_amount':('Максимальная сумма сделки','Eng katta bitim summasi'),
@@ -387,6 +413,12 @@ def plan_context(plan,lang):
                'rate':('Курс из набора данных','To‘plamdagi kurs'), 'participant':('Участник','Ishtirokchi'),
                'broker':('Брокер','Broker'), 'contract':('Контракт','Shartnoma')}
     labels = [metrics[plan.metric][uz]]
+    if plan.metric=='share' and plan.share_target:
+        from server.ratios import target_label
+        labels.append(('Часть: ' if not uz else 'Qism: ')+target_label(plan.share_target,lang))
+        denominator={'contract_type':('Все типы контрактов','Barcha shartnoma turlari'),'commodity':('Все товары','Barcha tovarlar'),
+                     'region':('Все регионы склада','Barcha ombor hududlari'),'status':('Общий итог по состояниям','Holatlar bo‘yicha jami')}
+        labels.append(denominator[plan.share_target.dimension][uz])
     for field,prefix in [('deal_id','№'),('contract_id','Shartnoma ' if uz else 'Контракт '),('participant_inn','STIR ' if uz else 'ИНН '),('broker_code','Broker ' if uz else 'Брокер '),('company_name','')]:
         if value:=getattr(plan,field): labels.append(prefix+str(value))
     if plan.metric in ['participant','broker','contract']: return labels

@@ -1,0 +1,179 @@
+{
+  "status": "answer",
+  "answer": "Доля экспортных сделок.\nПо сумме сделок (UZS): 2025 — 4,8963%; 2026 — 6,3547%.\n2025 → 2026: +1,4584 п.п.; относительное изменение доли — +29,79%.\nПо числу сделок: 2025 — 1,1809%; 2026 — 1,3796%.\n2025 → 2026: +0,1987 п.п.; относительное изменение доли — +16,83%.\n2026 год представлен только по 30.10.2026; сравнение использует доступные данные, а не два полных года.",
+  "columns": [
+    {
+      "key": "period",
+      "label": "Период / группа",
+      "kind": "text"
+    },
+    {
+      "key": "target_amount",
+      "label": "Сумма части",
+      "kind": "decimal",
+      "unit": "UZS"
+    },
+    {
+      "key": "amount",
+      "label": "Общая сумма",
+      "kind": "decimal",
+      "unit": "UZS"
+    },
+    {
+      "key": "amount_share_pct",
+      "label": "Доля по сумме",
+      "kind": "percent",
+      "unit": "%"
+    },
+    {
+      "key": "target_deals",
+      "label": "Сделок в части",
+      "kind": "integer"
+    },
+    {
+      "key": "deals",
+      "label": "Сделки",
+      "kind": "integer"
+    },
+    {
+      "key": "count_share_pct",
+      "label": "Доля по числу",
+      "kind": "percent",
+      "unit": "%"
+    }
+  ],
+  "rows": [
+    {
+      "id": 2025,
+      "label": 2025,
+      "deals": 115763,
+      "amount": "55976577480267.05510000",
+      "target_deals": 1367,
+      "target_amount": "2740766106533.95510000",
+      "first_date": "2025-01-02",
+      "last_date": "2025-12-31",
+      "period": "2025",
+      "amount_share_pct": "4.8962731019061213118159211648618440684",
+      "count_share_pct": "1.1808608968323212079852802708983008388"
+    },
+    {
+      "id": 2026,
+      "label": 2026,
+      "deals": 99306,
+      "amount": "52048498177445.05710000",
+      "target_deals": 1370,
+      "target_amount": "3307510073846.24710000",
+      "first_date": "2026-01-02",
+      "last_date": "2026-10-30",
+      "period": "2026",
+      "amount_share_pct": "6.3546695671606125080411125147102339184",
+      "count_share_pct": "1.3795742452621191065998026302539624997"
+    }
+  ],
+  "interpretation": [
+    "Доля в общем итоге",
+    "Часть: экспортных сделок",
+    "Все типы контрактов",
+    "за период 01.01.2025–30.10.2026",
+    "По годам",
+    "Все состояния"
+  ],
+  "provenance": {
+    "sql": "SELECT year(deal_date) AS id,year(deal_date) AS label,count(*) AS deals,coalesce(sum(amount_uzs),0) AS amount,\n        count(*) FILTER (WHERE contract_type=?) AS target_deals,\n        coalesce(sum(amount_uzs) FILTER (WHERE contract_type=?),0) AS target_amount,\n        min(deal_date) AS first_date,max(deal_date) AS last_date\n        FROM trades WHERE TRUE AND deal_date>=? AND deal_date<=? AND year(deal_date) IN (?,?) GROUP BY year(deal_date) ORDER BY id LIMIT ?",
+    "parameters": [
+      "Экспортный",
+      "Экспортный",
+      "2025-01-01",
+      "2026-10-30",
+      2025,
+      2026,
+      120
+    ],
+    "row_count": 215069,
+    "snapshot": "2026-10-30",
+    "sources": [
+      "deals_2022…2026.csv",
+      "contracts.csv",
+      "participants.csv",
+      "brokers.csv",
+      "usd_rates.csv"
+    ],
+    "period": {
+      "from": "2025-01-02",
+      "to": "2026-10-30"
+    },
+    "date_field": "deal_date",
+    "currency": "UZS",
+    "include_cancelled": true,
+    "statuses": [],
+    "method": "Доля = часть ÷ общий итог × 100. Разница в п.п. = доля после − доля до. Относительное изменение = (доля после − доля до) ÷ доля до × 100. До деления суммы USD приведены к UZS по дате каждой сделки; промежуточные доли не округляются.",
+    "share_target": {
+      "dimension": "contract_type",
+      "value": "Экспортный"
+    },
+    "comparison": [
+      {
+        "basis": "amount",
+        "from": "2025",
+        "to": "2026",
+        "difference_pp": "1.4583964652544911962251913498483898500",
+        "relative_change_pct": "29.785848029733815277283704662358981514"
+      },
+      {
+        "basis": "count",
+        "from": "2025",
+        "to": "2026",
+        "difference_pp": "0.1987133484297978986145223593556616609",
+        "relative_change_pct": "16.827837128221429507909986749151032078"
+      }
+    ]
+  },
+  "plan": {
+    "action": "query",
+    "metric": "share",
+    "share_target": {
+      "dimension": "contract_type",
+      "value": "Экспортный"
+    },
+    "share_basis": "both",
+    "comparison": true,
+    "years": [
+      2025,
+      2026
+    ],
+    "group": "year",
+    "year": null,
+    "date_from": "2025-01-01",
+    "date_to": "2026-10-30",
+    "date_field": "deal_date",
+    "commodity": null,
+    "region": null,
+    "statuses": [],
+    "include_cancelled": true,
+    "contract_type": null,
+    "form": null,
+    "deal_id": null,
+    "contract_id": null,
+    "participant_inn": null,
+    "company_name": null,
+    "role": "any",
+    "broker_code": null,
+    "grade": null,
+    "brand": null,
+    "quality_class": null,
+    "product_text": null,
+    "report_currency": "UZS",
+    "physical_unit": null,
+    "delivered_only": false,
+    "limit": 10,
+    "order": "desc",
+    "reason": "unknown"
+  },
+  "provider": {
+    "kind": "local",
+    "model": "verified-ratio",
+    "attempts": 0,
+    "used_backup": false
+  },
+  "elapsed_ms": 69
+}

@@ -6,7 +6,7 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
-from server.ai_models import AIQuestion, QueryPlan, language, local_chronology_plan, local_count_plan, preflight, prompt, system_prompt
+from server.ai_models import AIQuestion, QueryPlan, language, local_chronology_plan, local_count_plan, local_ratio_plan, preflight, prompt, system_prompt
 from server.ai_analytics import constrain_request, execute_plan, outcome
 from server.gemini import ModelUnavailable, get_pool
 from server.question_checks import QuestionMismatch
@@ -31,6 +31,13 @@ async def ask(request: AIQuestion):
         return response
     try:
         async with asyncio.timeout(80):
+            trusted=local_ratio_plan(request)
+            if trusted:
+                plan=constrain_request(request,trusted)
+                response=await asyncio.to_thread(execute_plan,plan,request)
+                response['provider']={'kind':'local','model':'verified-ratio' if plan.metric=='share' else 'verified-comparison','attempts':0,'used_backup':False}
+                response['elapsed_ms']=round((time.monotonic()-started)*1000)
+                return response
             def validate(text):
                 payload=json.loads(text)
                 if isinstance(payload, list):
@@ -51,7 +58,7 @@ async def ask(request: AIQuestion):
             response['elapsed_ms']=round((time.monotonic()-started)*1000)
             return response
         try:
-            fallback=local_count_plan(request) or local_chronology_plan(request)
+            fallback=local_ratio_plan(request) or local_count_plan(request) or local_chronology_plan(request)
             if fallback: fallback=constrain_request(request,fallback)
         except (ValueError,ValidationError):
             return outcome('question_mismatch',request.lang,'clarify')

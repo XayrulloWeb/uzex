@@ -132,10 +132,14 @@ def _calendar_checks(q, plan, require, scope_year):
 
 def validate_question(request, plan):
     if plan.action!='query': return
-    from server.ai_models import chronological_metric
+    from server.ai_models import chronological_metric, requested_share_basis, share_intent
 
     def require(field, expected):
-        if getattr(plan,field)!=expected: raise QuestionMismatch(field)
+        actual=getattr(plan,field)
+        target=plan.share_target if plan.metric=='share' else None
+        if target and target.dimension==('status' if field=='statuses' else field):
+            actual=[target.value] if field=='statuses' else target.value
+        if actual!=expected: raise QuestionMismatch(field)
 
     q = question_text(request.question)
     followup = bool(request.history and (re.search(r'^(?:а\b|теперь\b|также\b|для\s+(?:этого|него)|endi\b|shu\b|o\'sha\b)',q) or re.fullmatch(r'(?:за|в)\s+20\d{2}(?:\s+году)?[?!.]*',q)))
@@ -173,6 +177,14 @@ def validate_question(request, plan):
 
     products = _products(q)
     if len(products)>1: raise QuestionMismatch('multiple_commodities')
+    if plan.metric=='share':
+        if not share_intent(q) or plan.share_target is None: raise QuestionMismatch('share_definition')
+        target=plan.share_target
+        if target.dimension=='commodity' and target.value not in products: raise QuestionMismatch('share_target')
+        if target.dimension=='region' and target.value not in _mentions(q,REGIONS): raise QuestionMismatch('share_target')
+        if target.dimension=='contract_type' and not re.search(r'экспорт|eksport' if target.value=='Экспортный' else r'внутренн|ichki',q):
+            raise QuestionMismatch('share_target')
+        require('share_basis',requested_share_basis(q))
     if products: require('commodity',next(iter(products)))
     elif request.scope.commodity and not plan.deal_id: require('commodity',request.scope.commodity)
     elif plan.commodity and plan.commodity not in _products(previous): raise QuestionMismatch('unexpected_commodity')
@@ -235,6 +247,7 @@ def validate_question(request, plan):
     ) for label in [status,uz])]
     if len(named_statuses)>1: raise QuestionMismatch('combined_statuses')
     if named_statuses: wanted_status=named_statuses
+    if plan.metric=='share' and plan.share_target.dimension=='status' and not wanted_status: raise QuestionMismatch('share_target')
     if wanted_status:
         if including or all_statuses: raise QuestionMismatch('combined_statuses')
         require('statuses',wanted_status)
@@ -277,8 +290,10 @@ def validate_question(request, plan):
     volume = bool(re.search(r'\bобъем\w*|\bhajm\w*|сколько(?:\s+(?:всего|было))?\s+(?:тонн|килограмм|литр|штук|метр)|qancha\s+(?:tonna|kilogram|litr|dona)',q))
     counting = bool(re.search(r'сколько(?:\s+\w+){0,3}\s+сдел|в\s+скольких.*?сделк|число\s+сдел|количество\s+сдел|nechta(?:\s+noyob)?\s+bitim|bitimlar\s+soni',q))
     late = bool(re.search(r'с\s+опозданием|позже\s+срока|kech\s+yetkaz',q))
+    if plan.metric=='share' and (volume or late): raise QuestionMismatch('unsupported_share_basis_or_filter')
     if late and (amount or volume or price): raise QuestionMismatch('late_calculation_not_supported')
-    if temporal: require('metric',temporal)
+    if share_intent(q): require('metric','share')
+    elif temporal: require('metric',temporal)
     elif weighted: require('metric','weighted_price')
     elif price and re.search(r'максималь|сам\w*\s+высок|eng\s+yuqori',q): require('metric','max_price')
     elif price and re.search(r'минималь|сам\w*\s+низк|eng\s+past',q): require('metric','min_price')
@@ -318,7 +333,7 @@ def validate_question(request, plan):
     wanted_groups = {group for group,pattern in groups.items() if re.search(pattern,q)}
     if len(wanted_groups)>1: raise QuestionMismatch('multiple_groups')
     if wanted_groups: require('group',wanted_groups.pop())
-    elif plan.group!='none' and not ranked and not re.search(r'сравн|taqqosla|solishtir',q):
+    elif plan.group!='none' and not ranked and not (plan.comparison and plan.group=='year') and not re.search(r'сравн|taqqosla|solishtir',q):
         if not previous or not re.search(groups[plan.group],previous): raise QuestionMismatch('unexpected_group')
 
     if plan.metric!='rate' and plan.metric!='count':
