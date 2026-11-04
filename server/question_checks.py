@@ -240,6 +240,7 @@ def validate_question(request, plan):
         require('statuses',wanted_status)
         if cancelled: require('include_cancelled',True)
     elif including or all_statuses:
+        if set(plan.statuses) >= set(STATUS_UZ.keys()): plan.statuses = []
         require('include_cancelled',True); require('statuses',[])
     elif without or (request.scope.status=='active' and not plan.deal_id):
         require('include_cancelled',False); require('statuses',[])
