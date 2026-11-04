@@ -1,0 +1,192 @@
+{
+  "status": "Reference answers computed from CSV; no agent has been implemented or tested.",
+  "data_coverage": "All 500,000 deals across 2022–2026; data cutoff 2026-10-30.",
+  "questions": [
+    {
+      "id": "count_2024",
+      "question_ru": "Сколько сделок зарегистрировано в 2024 году, включая все состояния?",
+      "question_uz": "2024-yilda barcha holatlarni hisobga olganda nechta bitim qayd etilgan?",
+      "expected": {
+        "count": 106647
+      },
+      "calculation": "Count every row in deals_2024.csv; no status filter."
+    },
+    {
+      "id": "cancelled_2024",
+      "question_ru": "Сколько сделок 2024 года аннулировано из-за неоплаты?",
+      "question_uz": "2024-yildagi nechta bitim to‘lov bo‘lmagani sababli bekor qilingan?",
+      "expected": {
+        "count": 7323
+      },
+      "calculation": "Exact state filter Аннулирован(Не оплачен); states as of 2026-10-30."
+    },
+    {
+      "id": "forms_2024",
+      "question_ru": "Покажи число сделок 2024 года по формам контракта, включая все состояния.",
+      "question_uz": "2024-yildagi bitimlar sonini shartnoma shakllari bo‘yicha, barcha holatlarni hisobga olib ko‘rsating.",
+      "expected": {
+        "Спот": 98384,
+        "Форвард": 7858,
+        "Фьючерс": 405
+      },
+      "calculation": "Group by Форма контракта in deals_2024.csv."
+    },
+    {
+      "id": "export_2024",
+      "question_ru": "Какова сумма экспортных сделок 2024 года в сумах, включая аннулированные?",
+      "question_uz": "2024-yildagi eksport bitimlarining, bekor qilinganlarini ham qo‘shganda, so‘mdagi jami summasi qancha?",
+      "expected": {
+        "count": 1327,
+        "amount_uzs_exact": "2621400340149.8958",
+        "amount_uzs_2dp": "2621400340149.90"
+      },
+      "calculation": "Join contract currency; multiply each USD deal by USD rate on its own deal date; sum before rounding."
+    },
+    {
+      "id": "largest_domestic_buyer_2024",
+      "question_ru": "Кто крупнейший покупатель по сумме внутренних сделок 2024 года без аннулированных?",
+      "question_uz": "2024-yilda bekor qilingan bitimlarni hisobga olmaganda ichki bitimlar summasi bo‘yicha eng yirik xaridor kim?",
+      "expected": {
+        "inn": "983531029",
+        "name": "\"Zoket Invest\" OK",
+        "amount_uzs": "1127417344173.29"
+      },
+      "calculation": "Domestic only; exclude cancellation; sum by buyer INN, then join exact company name; ties by INN."
+    },
+    {
+      "id": "late_fulfilled_2024",
+      "question_ru": "Сколько полностью исполненных сделок 2024 года поставлено позже срока из карточки контракта?",
+      "question_uz": "2024-yildagi to‘liq bajarilgan bitimlardan nechtasi shartnoma kartochkasidagi yetkazib berish muddatidan kech yetkazilgan?",
+      "expected": {
+        "count": 3759
+      },
+      "calculation": "State Исполнен and delivery date > payment date + contract delivery term in calendar days; equality is on time."
+    },
+    {
+      "id": "weighted_diesel_price_2024",
+      "question_ru": "Какова средневзвешенная цена килограмма дизельного топлива во внутренних сделках 2024 года без аннулированных?",
+      "question_uz": "2024-yildagi ichki bitimlar bo‘yicha, bekor qilinganlarini hisobga olmasdan, dizel yoqilg‘isining bir kilogramm uchun o‘rtacha tortilgan narxi qancha?",
+      "expected": {
+        "matched_deals": 5604,
+        "amount_uzs": "2081509050779",
+        "quantity_kg": "169355794",
+        "price_uzs_per_kg_2dp": "12290.75"
+      },
+      "calculation": "TN VED 271019 AND product contains дизел; exclude mazut although its code is also 271019. Volume=Количество×Лот, tonnes→kg. Price=sum(amount)/sum(volume), not mean of deal prices."
+    },
+    {
+      "id": "nonunit_lot_volume",
+      "question_ru": "Каков объём сделки №100007 в единицах измерения?",
+      "question_uz": "100007-raqamli bitim hajmi o‘lchov birligida qancha?",
+      "expected": {
+        "deal_id": "100007",
+        "quantity_lots": "48",
+        "lot_size": "1000",
+        "physical_volume": "48000",
+        "unit": "штука"
+      },
+      "calculation": "Multiply Количество by Лот; do not treat lots as physical units."
+    },
+    {
+      "id": "usd_rate_snapshot",
+      "question_ru": "Какой курс доллара указан в данных на 30 октября 2026 года?",
+      "question_uz": "Ma’lumotlarda 2026-yil 30-oktabr uchun dollar kursi qancha?",
+      "expected": {
+        "rate_uzs_per_usd": "13369.54"
+      },
+      "calculation": "Exact date lookup in usd_rates.csv; this is fictional dataset rate, not a live real-world rate."
+    },
+    {
+      "id": "export_deal_conversion",
+      "question_ru": "Переведи сумму сделки №100024 в сумы по курсу из набора данных на дату сделки.",
+      "question_uz": "100024-raqamli bitim summasini bitim sanasidagi ma’lumotlar to‘plami kursi bo‘yicha so‘mga o‘giring.",
+      "expected": {
+        "deal_id": "100024",
+        "amount_usd": "43176.64",
+        "rate_uzs_per_usd": "10839.03",
+        "amount_uzs_exact": "467992896.2592"
+      },
+      "calculation": "USD amount from row 100024 multiplied by the rate on its own deal date; contracts.csv confirms USD."
+    },
+    {
+      "id": "future_data_absent",
+      "question_ru": "Какой оборот биржи в 2027 году?",
+      "question_uz": "2027-yilda birja aylanmasi qancha?",
+      "expected": {
+        "outcome": "insufficient_data",
+        "reason": "Trade data end on 2026-10-30. Do not report zero or make a forecast."
+      },
+      "calculation": "Coverage check must happen before aggregation; an absent period is not zero turnover."
+    },
+    {
+      "id": "profit_data_absent",
+      "question_ru": "Какова чистая прибыль продавца по сделке №100001?",
+      "question_uz": "100001-raqamli bitim bo‘yicha sotuvchining sof foydasi qancha?",
+      "expected": {
+        "outcome": "insufficient_data",
+        "reason": "Revenue is present; costs, expenses and tax amounts required for net profit are absent."
+      },
+      "calculation": "Do not substitute deal amount for profit."
+    },
+    {
+      "id": "count_2025",
+      "question_ru": "Сколько сделок зарегистрировано в 2025 году, включая все состояния?",
+      "question_uz": "2025-yilda barcha holatlarni hisobga olganda nechta bitim qayd etilgan?",
+      "expected": {
+        "count": 115763
+      },
+      "calculation": "Count all source rows in deals_2025.csv, independently of the audit report."
+    },
+    {
+      "id": "cancelled_2025",
+      "question_ru": "Сколько сделок 2025 года аннулировано из-за неоплаты?",
+      "question_uz": "2025-yildagi nechta bitim to‘lov bo‘lmagani sababli bekor qilingan?",
+      "expected": {
+        "count": 8085
+      },
+      "calculation": "Exact state filter Аннулирован(Не оплачен) in deals_2025.csv."
+    },
+    {
+      "id": "export_2025",
+      "question_ru": "Какова сумма экспортных сделок 2025 года в сумах, включая аннулированные?",
+      "question_uz": "2025-yildagi eksport bitimlarining, bekor qilinganlarini ham qo‘shganda, so‘mdagi jami summasi qancha?",
+      "expected": {
+        "count": 1367,
+        "amount_uzs_exact": "2740766106533.9551",
+        "amount_uzs_2dp": "2740766106533.96"
+      },
+      "calculation": "For each USD contract deal, use that deal date rate; aggregate before rounding."
+    },
+    {
+      "id": "all_years_count",
+      "question_ru": "Сколько сделок во всём наборе, включая все состояния?",
+      "question_uz": "Ma’lumotlar to‘plamida barcha holatlarni hisobga olganda jami nechta bitim bor?",
+      "expected": {
+        "count": 500000
+      },
+      "calculation": "Count all rows across all five year files; missing-year coverage errors must not pass this check."
+    },
+    {
+      "id": "all_years_registered_amount",
+      "question_ru": "Какова сумма всех зарегистрированных сделок за весь период в сумах, включая аннулированные?",
+      "question_uz": "Butun davr davomida qayd etilgan barcha bitimlarning, bekor qilinganlarini ham qo‘shganda, so‘mdagi jami summasi qancha?",
+      "expected": {
+        "amount_uzs_exact": "220477157554431.7867",
+        "amount_uzs_2dp": "220477157554431.79"
+      },
+      "calculation": "Sum all five years, all states. Convert USD by each deal date; sum before rounding. This is registered amount, not realized sales."
+    },
+    {
+      "id": "broker_unique_deals_2025",
+      "question_ru": "В скольких уникальных сделках 2025 года участвовал брокер BK001 с любой стороны, включая все состояния?",
+      "question_uz": "2025-yilda BK001 brokeri istalgan tomon sifatida, barcha holatlarni hisobga olganda, nechta noyob bitimda qatnashgan?",
+      "expected": {
+        "distinct_deals": 1170,
+        "seller_side_count": 426,
+        "buyer_side_count": 748,
+        "both_sides_count": 4
+      },
+      "calculation": "Count a deal once when broker is on either side; do not double-count deals where the same broker is on both sides."
+    }
+  ]
+}

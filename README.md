@@ -1,118 +1,82 @@
-# UZEX SYNAPSE 2026 // Birja Kognitiv AI-Agenti & Interaktiv Terminali
+# UZEX Observatory
 
-> **UZEX AI Hackathon 2026 (Saralash bosqichi)** uchun yaratilgan ikki tilli (RU + UZ), mutlaqo faktik va nolinchi gallyutsinatsiyali (Zero-Hallucination) sunʼiy intellekt agenti va 3D interaktiv birja terminali.
+Интерактивная обсерватория товарного рынка на всех **500 000 сделках** из задания UZEX AI Hackathon 2026. Текущий этап — сайт и аналитика **без ИИ и внешних API**, по решению пользователя. Языковой агент будет добавлен отдельно.
 
----
+## Что работает
 
-## 🌟 Asosiy Xususiyatlar va Imkoniyatlar
+- 3D-карта 14 регионов Узбекистана: выбор области, подсветка по сумме сделок, связи склада продавца с регистрационным регионом покупателя. Есть интерактивный режим 2D.
+- Фильтры по году, региону склада, товару и состоянию сделки; весь период доступен отдельной кнопкой.
+- Реальные показатели, помесячный график, структура рынка, рейтинги покупателей и продавцов, экспорт и завершённые поставки с опозданием.
+- Реестр с поиском по номеру сделки/контракта, ИНН, компании или товару, пагинацией и CSV текущей страницы.
+- Карточка сделки: участники, брокеры, физический объём, цены, валюта, даты и источники. Из карточки можно перейти к сделкам компании.
+- Отчёты с точной суммой, числом строк, параметрами и SQL основания расчёта; экспорт CSV.
+- Русский и узбекский интерфейс, адаптация к телефону, уменьшение анимации по системной настройке. 3D перестаёт перерисовываться вне экрана.
 
-1. **100% Maʼlumotlarga Asoslangan (Zero-Hallucination Guardrail)**:
-   - Agar soʻralgan kompaniya, tovar yoki davr birja reyestrida mavjud boʻlmasa, agent **buni ochiq aytadi** va hech qachon raqam yoki nomlarni oʻylab topmaydi (*xakatonning asosiy diskvalifikatsiya sharti*).
-   - Har bir javob ortida aniq SQL-soʻrov, mos tushgan bitimlar roʻyxati va hisob-kitob formulasi keltiriladi.
+Суммы рассчитываются десятичной арифметикой. USD пересчитывается по курсу на дату каждой сделки. Размер лота учитывается отдельно. Дизель и мазут разделены несмотря на общий код ТН ВЭД. По умолчанию суммы включают аннулированные сделки — состояние фильтра видно на странице.
 
-2. **Ikki Tilli NLP Tahlil (RU + UZ)**:
-   - Rus va oʻzbek tillaridagi erkin matnli savollarni avtomatik taniydi va shu tilda toʻliq hisobot shakllantiradi.
-   - Oʻzbekcha o‘/g‘ harflari, apostroflar, sinonimlar va ruscha tovar nomlari oʻrtasida mukammal semantik bogʻlanish.
+Все компании, цены, суммы и курсы в исходных файлах вымышленные. Срез состояний — конец 30.10.2026. Это историческая выгрузка, не текущая трансляция торгов.
 
-3. **Murakkab Birja Qoidalarining Toʻliq Qamrab Olinishi**:
-   - **Lot va Birlik Narxi**: $\text{Bitim hajmi} = \text{Количество} \times \text{Лот}$; $\text{Birlik narxi} = \text{Сумма сделки} / \text{Bitim hajmi}$.
-   - **Eksport va Valyuta**: Eksport bitimlari AQSh dollarida; soʻmdagi qiymat bitim sanasidagi kunlik dollar kursi (`usd_rates.csv`) boʻyicha aniq konvertatsiya qilinadi.
-   - **Mintaqalar integratsiyasi**: `contracts.csv` dagi ruscha viloyat nomlari (`Ферганская область`) va `deals` dagi lotincha nomlar (`Farg‘ona viloyati`) toʻliq oʻzaro bogʻlangan.
-   - **Bitimlar holati**: 8 ta holat (Исполнен, Аннулирован, Исполнен(Частично) va h.k.) inobatga olingan.
+## Запуск
 
-4. **Awwwards-Darajasidagi 3D Interaktiv Veb-Terminal**:
-   - **Three.js WebGL 3D Galaxy**: 500 000 bitimni ifodalovchi yulduzli klaster va 6 ta asosiy tovar sektori.
-   - **Web Audio API**: Taktil sci-fi audio qayta aloqa (tashqi fayllarsiz toza sintez).
-   - **Glassmorphism & Cyber-Fintech UI**: Qorongʻi OLED fon, neon aksentlar, jonli reestr statistikasi va tezkor sinov tugmalari.
+Нужны Python 3.12+, Node.js 22.12+ и npm. Используйте существующий checkout; отдельный Git worktree для облачной задачи не требуется.
 
-5. **Telegram Bot (aiogram 3)**:
-   - Telegram orqali har qanday qurilmadan oʻrnatishsiz va roʻyxatdan oʻtishsiz tezkor ishlash imkoniyati.
-
----
-
-## 📊 Maʼlumotlar Bazasi va Arxitektura
-
-- **Hajm**: 500 000 ta birja bitimi (2022–2026), 6 616 ta shartnoma, 14 392 ta ishtirokchi, 120 ta broker, 1 765 kunlik valyuta kursi.
-- **Dvigatel**: SQLite 3.50 (WAL mode, xotirada 64MB kesh) + FTS5 (Full-Text Search) + B-Tree indekslar.
-- **Tezlik**: 500 000 yozuv boʻyicha agregat hisoblar — **15–40 millisekund** (90 soniyalik limitdan 2000 barobar tezroq!).
-
-```
-[Foydalanuvchi / Komissiya (RU / UZ)]
-                 │
-                 ▼
-     [Web-Terminal / Telegram Bot]
-                 │
-                 ▼
-┌──────────────────────────────────────────────┐
-│ 1. Guardrail & Entity Resolver (FTS5):       │
-│    STIR, Broker, Shartnoma, Tovar, Sana     │
-│    Mavjud bo'lmasa -> STRICT GROUNDED REFUSAL│
-└──────────────────────┬───────────────────────┘
-                       │ (topilganda)
-                       ▼
-┌──────────────────────────────────────────────┐
-│ 2. Schema-Aware Analytical SQL Generator     │
-│    (Valyuta, lot, status hisob-kitoblari)    │
-└──────────────────────┬───────────────────────┘
-                       │
-                       ▼
-┌──────────────────────────────────────────────┐
-│ 3. Answer & Grounding Evidence Packager:     │
-│    • Kognitiv tahlil va javob matni          │
-│    • Bajarilgan SQL-soʻrov                   │
-│    • Asos boʻlgan faktik yozuvlar jadvali    │
-└──────────────────────────────────────────────┘
-```
-
----
-
-## 🚀 Ishga Tushirish (Quick Start)
-
-### 1. Talablar
-- Python 3.10+
-- Node.js 18+ (faqat frontendni qayta yigʻish uchun, tayyor `dist` mavjud)
-
-### 2. Oʻrnatish va bazani qurish
 ```bash
-# Bogʻliqliklarni oʻrnatish
-pip install -r requirements.txt
-
-# Maʼlumotlar bazasini qurish (14 soniya davom etadi)
-python build_db.py
+cd /workspace/uzex
+bash scripts/install.sh
+bash scripts/start.sh
 ```
 
-### 3. Veb-xizmatni ishga tushirish
+В подготовленной среде CSV, база, зависимости и сборка уже присутствуют. Для повторного запуска достаточно второй команды. Приложение по умолчанию слушает порт 8000; другой порт можно выбрать через `UZEX_PORT`. API и production-интерфейс обслуживаются одним процессом.
+
+Все оригинальные CSV включены в репозиторий в папке `data/raw/`:
+
+```text
+deals_2022.csv  deals_2023.csv  deals_2024.csv  deals_2025.csv  deals_2026.csv
+contracts.csv   participants.csv   brokers.csv   usd_rates.csv
+```
+
+Рабочая DuckDB не включается в Git: она воспроизводится из исходных CSV. Импорт проверяет SHA-256 по `docs/data-audit.json`, количество строк, уникальность номеров и сумму по независимому аудиту. Повторный импорт с теми же данными использует проверенную базу. Изменение CSV требует нового аудита.
+
+## Разработка
+
 ```bash
-python server.py
-# Brauzerda oching: http://localhost:8000
+# Backend: terminal 1
+.venv/bin/python -m uvicorn server.app:app --host 0.0.0.0 --port 8000 --reload
+
+# Frontend: terminal 2
+npm run dev
+
+# Production frontend
+npm run build
+
+# Проверки вычислений и API
+.venv/bin/python -m pytest -q
+
+# Браузерные сценарии (запущенное приложение + установленный Chromium)
+.venv/bin/python scripts/browser_check.py
 ```
 
-### 4. Telegram-botni ishga tushirish (ixtiyoriy)
-```bash
-set TELEGRAM_BOT_TOKEN=sizning_bot_tokeningiz
-python bot.py
+Vite проксирует `/api` к backend. Шрифты и география поставляются локально; работающий сайт не требует внешних сетевых запросов. В сетевой песочнице агента для HTTP-проверок может потребоваться исполнение с доступом к локальным сокетам.
+
+## Структура
+
+```text
+src/                    React + TypeScript, карта, графики и интерфейс
+server/import_data.py   Проверяемый импорт CSV → DuckDB
+server/analytics.py     Параметризованные расчёты и отчёты
+server/app.py           FastAPI и раздача собранного сайта
+tests/                  Проверки по независимо рассчитанным эталонам
+data/raw/               Проверенные исходные CSV из задания
+data/uzex.duckdb        Рабочая база, исключена из Git
+docs/                   Аудит, эталоны, план и источники
 ```
 
----
+DuckDB открывается только для чтения, внешние источники SQL отключены. Пользовательские значения передаются параметрами. Публичного исполнения произвольного SQL нет. В CSV экранируются значения, которые могли бы интерпретироваться таблицами как формулы.
 
-## 🏆 Sinov Savollari (Test Scenarios)
+## Границы этапа
 
-1. **Sement boʻyicha xaridlar**:
-   - *«Qaysi kompaniya 2024-yilda eng koʻp sement sotib olgan va qancha summaga?»*
-   - 👉 Natija: `LO‘HI IMPEKS MCHJ` (STIR: 955082698), 51,765 tonna, 44.58 mlrd soʻm, 342 ta bitim.
+Свободные вопросы на естественном языке, диалоговый контекст и выбор модели пока не реализованы. Поле поиска — поиск по реквизитам и названиям, готовые отчёты — явные операции. Это не следует выдавать за работающего LLM-агента.
 
-2. **Eng yirik eksport**:
-   - *«Eng yirik eksport bitimi qachon, kimlar o'rtasida va qancha summaga tuzilgan?»*
-   - 👉 Natija: Bitim №547500 (24.06.2026), Katod medniy M00k, $1,683,554.25 (22.24 mlrd soʻm), TIZAHI METALL MCHJ -> Bejul Savdo OK.
+Публичный хостинг и отправка конкурсной формы ещё не выполнены. Для размещения нужны Node.js на этапе сборки, Python при запуске и доступный файл DuckDB либо исходные CSV для импорта. Приложение уважает стандартный `PORT`, а также `UZEX_HOST` и `UZEX_PORT`. Доступность на публичном адресе необходимо проверить после размещения.
 
-3. **Benzin narxlari tahlili**:
-   - *«2023-yil avgust oyida AI-92 benzini bo'yicha o'rtacha birja narxi qancha bo'lgan?»*
-   - 👉 Natija: Oʻrtacha tortilgan narx: 12,101.91 soʻm/tonna, 127 ta bitim, 40.8 mlrd soʻm aylanma.
-
-4. **Gallyutsinatsiyadan himoya (Mavjud boʻlmagan subyekt)**:
-   - *«OOO "Global Super Trade" qancha metall sotgan?»*
-   - 👉 Natija: `❌ Maʼlumotlar bazasida kompaniya topilmadi. Reyestrda «Global Super Trade» nomli savdo ishtirokchisi mavjud emas.`
-
-5. **Gallyutsinatsiyadan himoya (Mavjud boʻlmagan tovar)**:
-   - *«2024-yilda oltin (gold) sotilganmi?»*
-   - 👉 Natija: `❌ Maʼlumotlar bazasida javob yoʻq. Spot savdolari reyestrida «Oltin» boʻyicha hech qanday shartnoma yoki bitim qayd etilmagan.`
+Исходные требования и проверка данных: [DATA_AUDIT.md](docs/DATA_AUDIT.md). Эталоны: [reference-questions.json](docs/reference-questions.json). План следующего этапа: [IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md). Источники карты и шрифтов: [THIRD_PARTY.md](docs/THIRD_PARTY.md).

@@ -1,19 +1,14 @@
-# Database generated files
-uzex.db
-uzex.db-wal
-uzex.db-shm
-
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-venv/
+.venv/
+node_modules/
+dist/
+data/*.duckdb*
+data/import-manifest.json
 .env
-
-# Node
-frontend/node_modules/
-frontend/.vite/
-
-# OS
-.DS_Store
-Thumbs.db
+.env.*
+!.env.example
+__pycache__/
+.pytest_cache/
+test-results/
+*.log
+*.pid
+*.tsbuildinfo

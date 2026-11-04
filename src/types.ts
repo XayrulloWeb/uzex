@@ -1,0 +1,91 @@
+export type Lang = 'ru' | 'uz';
+export type Scope = {
+  year: number;
+  region: string;
+  commodity: string;
+  status: 'all' | 'active' | 'fulfilled';
+};
+export type Region = { id: string; raw: string; ru: string; uz: string; lng: number; lat: number };
+export type Commodity = { id: string; code: string; ru: string; uz: string };
+export type Catalog = {
+  regions: Region[];
+  commodities: Commodity[];
+  years: number[];
+  total_deals: number;
+  ai_enabled: boolean;
+  snapshot: string;
+};
+export type RegionStat = { id: string; deals: number; amount_uzs: string };
+export type Monthly = { period: string; deals: number; amount_uzs: string };
+export type Route = { origin: string; destination: string; deals: number; amount_uzs: string };
+export type Overview = {
+  metrics: {
+    deals: number;
+    amount_uzs: string;
+    sellers: number;
+    buyers: number;
+    cancelled: number;
+    fulfilled: number;
+    export_deals: number;
+    export_amount_uzs: string;
+    first_date: string | null;
+    last_date: string | null;
+  };
+  monthly: Monthly[];
+  regions: RegionStat[];
+  commodities: RegionStat[];
+  routes: Route[];
+  snapshot: string;
+  total_dataset_deals: number;
+};
+export type DealRow = {
+  deal_id: number;
+  deal_date: string;
+  contract_id: string;
+  product_label: string;
+  commodity: string;
+  region: string;
+  lot_count: string;
+  lot_size: string;
+  quantity: string;
+  unit: string;
+  amount_native: string;
+  currency: string;
+  amount_uzs: string;
+  status: string;
+  seller_name: string;
+  seller_inn: string;
+  buyer_name: string;
+  buyer_inn: string;
+};
+export type DealDetail = DealRow & {
+  payment_date: string | null;
+  delivery_date: string | null;
+  delivered_quantity: string | null;
+  start_price: string;
+  unit_price_native: string;
+  usd_rate: string;
+  form: string;
+  auction: string;
+  contract_type: string;
+  seller_broker: string;
+  buyer_broker: string;
+  contract: Record<string, string | number>;
+  seller_broker_detail: { name: string };
+  buyer_broker_detail: { name: string };
+};
+export type Registry = { total: number; rows: DealRow[]; offset: number; limit: number };
+export type Report = {
+  kind: string;
+  title: string;
+  rows: { id: string; label: string; deals: number; amount_uzs: string }[];
+  totals: { deals: number; amount_uzs: string };
+  provenance: {
+    sql: string;
+    parameters: unknown[];
+    sources: string[];
+    snapshot: string;
+    method: string;
+    row_count: number;
+  };
+};
