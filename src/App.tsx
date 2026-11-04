@@ -25,6 +25,7 @@ import {
   Building2,
   MapPin,
   CircleHelp,
+  Sparkles,
 } from 'lucide-react';
 import type { Catalog, DealDetail, Lang, Overview, Registry, Report, Scope } from './types';
 import { api, compact, csvDownload, dateLabel, exact, integer, params, STATUS_UZ } from './lib';
@@ -282,6 +283,20 @@ export default function App() {
     document
       .getElementById('analysis')
       ?.scrollIntoView({ behavior: reduced ? 'instant' : 'smooth' });
+  };
+  const goAI = () => {
+    setView('overview');
+    let attempts = 0;
+    const reveal = () => {
+      const section = document.getElementById('ask-ai');
+      if (section) {
+        section.scrollIntoView({ behavior: reduced ? 'instant' : 'smooth', block: 'start' });
+        section.querySelector('textarea')?.focus({ preventScroll: true });
+      } else if (attempts++ < 60) {
+        requestAnimationFrame(reveal);
+      }
+    };
+    requestAnimationFrame(reveal);
   };
   const scopeLabel = [
     period,
@@ -599,9 +614,21 @@ export default function App() {
             <button className={view === 'registry' ? 'active' : ''} onClick={goRegistry}>
               {t('Реестр сделок', 'Bitimlar reyestri')}
             </button>
+            <button className="ai-nav" onClick={goAI}>
+              <Sparkles size={13} />
+              {t('AI-аналитик', 'AI-tahlilchi')}
+            </button>
             <button onClick={() => setMethod(true)}>{t('О данных', 'Ma’lumotlar')}</button>
           </nav>
           <div className="header-right">
+            <button
+              className="mobile-ai-shortcut"
+              onClick={goAI}
+              aria-label={t('Открыть AI-аналитика', 'AI-tahlilchini ochish')}
+            >
+              <Sparkles size={14} />
+              AI
+            </button>
             <span className="dataset-status">
               <i className="status-dot" />
               {t('500 000 СДЕЛОК', '500 000 BITIM')}
@@ -668,15 +695,8 @@ export default function App() {
                     'Har bir bitim — katta manzaraning bir qismi. Bozor aloqalari, hajmlari va dinamikasini o‘rganing.',
                   )}
                 </motion.p>
-                <button
-                  className="explore-button"
-                  onClick={() =>
-                    document
-                      .getElementById('analysis')
-                      ?.scrollIntoView({ behavior: reduced ? 'instant' : 'smooth', block: 'start' })
-                  }
-                >
-                  {t('Исследовать данные', 'Ma’lumotlarni o‘rganish')}
+                <button className="explore-button" onClick={goAI}>
+                  {t('Задать вопрос AI', 'AI’ga savol berish')}
                   <span>
                     <ArrowDown size={19} />
                   </span>

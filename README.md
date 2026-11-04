@@ -85,4 +85,6 @@ Gemini подключается через защищённые переменн
 
 Публичный хостинг и отправка конкурсной формы ещё не выполнены. Для размещения нужны Node.js на этапе сборки, Python при запуске и доступный файл DuckDB либо исходные CSV для импорта. Приложение уважает стандартный `PORT`, а также `UZEX_HOST` и `UZEX_PORT`. Доступность на публичном адресе необходимо проверить после размещения.
 
+AI открывается кнопкой «Задать вопрос AI» на первом экране, пунктом «AI-аналитик» в шапке или кнопкой AI на телефоне. Матрица готовности к конкурсу: [READINESS.md](docs/READINESS.md). Черновик описания для заявки: [SUBMISSION.md](docs/SUBMISSION.md).
+
 Исходные требования и проверка данных: [DATA_AUDIT.md](docs/DATA_AUDIT.md). Эталоны: [reference-questions.json](docs/reference-questions.json). План следующего этапа: [IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md). Источники карты и шрифтов: [THIRD_PARTY.md](docs/THIRD_PARTY.md).

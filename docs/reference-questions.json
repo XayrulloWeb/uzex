@@ -1,5 +1,5 @@
 {
-  "status": "Reference answers computed from CSV; no agent has been implemented or tested.",
+  "status": "Reference answers computed independently from CSV. Analytics and mocked Gemini planning are tested; live Gemini understanding and end-to-end timing have not been verified.",
   "data_coverage": "All 500,000 deals across 2022–2026; data cutoff 2026-10-30.",
   "questions": [
     {

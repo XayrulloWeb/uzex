@@ -234,6 +234,24 @@ html {
 .site-header nav button:hover {
   color: #eef5e7;
 }
+.site-header nav .ai-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--lime);
+  white-space: nowrap;
+}
+.mobile-ai-shortcut {
+  display: none;
+  align-items: center;
+  gap: 5px;
+  min-height: 36px;
+  padding: 0 7px;
+  border: 1px solid #bfe48540;
+  border-radius: 5px;
+  color: var(--lime);
+  font: 11px var(--mono);
+}
 .site-header nav button.active {
   color: #edf5e2;
 }
@@ -2140,6 +2158,15 @@ footer .footer-coordinate {
   .site-header {
     height: 78px;
   }
+  .site-header nav {
+    display: none;
+  }
+  .mobile-ai-shortcut {
+    display: inline-flex;
+  }
+  .header-right {
+    gap: 10px;
+  }
   .brand-caption {
     font-size: 9px;
     letter-spacing: 0.08em;
@@ -2383,7 +2410,7 @@ footer .footer-coordinate {
     font-size: 9px;
   }
   .header-right {
-    gap: 0;
+    gap: 8px;
   }
   .language-switch {
     font-size: 11px;
