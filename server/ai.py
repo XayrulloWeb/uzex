@@ -40,7 +40,7 @@ async def ask(request: AIQuestion):
                 return constrain_request(request,QueryPlan.model_validate(payload))
             plan,provider=await get_pool().generate(system_prompt(),prompt(request),validate)
             response=await asyncio.to_thread(execute_plan,plan,request)
-            provider['kind']='gemini'
+            provider['kind']=provider.get('kind','gemini')
             response['provider']=provider
             response['elapsed_ms']=round((time.monotonic()-started)*1000)
             return response

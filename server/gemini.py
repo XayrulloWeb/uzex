@@ -25,13 +25,15 @@ class ModelUnavailable(Exception):
 
 
 class GeminiPool:
-    def __init__(self, keys=None, models=None, transport=None, discover=True, budget=70.0):
+    def __init__(self, keys=None, models=None, transport=None, discover=True, budget=70.0, groq_key=None):
+        self.groq_key = groq_key if groq_key is not None else (os.getenv('UZEX_GROQ_KEY') if keys is None else None)
+        self.groq_models = [m.strip() for m in os.getenv('UZEX_GROQ_MODELS', 'openai/gpt-oss-120b,qwen/qwen3.8-27b').split(',') if m.strip()]
         extra_keys = [k.strip() for k in os.getenv('UZEX_GEMINI_KEYS', '').split(',') if k.strip()]
         configured_keys = keys if keys is not None else ([os.getenv('UZEX_GEMINI_KEY_PRIMARY'), os.getenv('UZEX_GEMINI_KEY_BACKUP'), os.getenv('UZEX_GEMINI_KEY_3'), os.getenv('UZEX_GEMINI_KEY_4')] + extra_keys)
         self.keys = list(dict.fromkeys(k for k in configured_keys if k))
         configured_models = models or os.getenv('UZEX_GEMINI_MODELS', '').split(',')
         self.models = list(dict.fromkeys(m.strip() for m in configured_models if m.strip())) or DEFAULT_MODELS[:]
-        if any(not re.fullmatch(r'[A-Za-z0-9._-]{1,100}', m) for m in self.models):
+        if any(not re.fullmatch(r'[A-Za-z0-9._/-]{1,100}', m) for m in self.models):
             raise ValueError('Invalid Gemini model identifier')
         self.transport = transport
         self.discover = discover
@@ -44,7 +46,7 @@ class GeminiPool:
 
     @property
     def configured(self):
-        return bool(self.keys)
+        return bool(self.keys or self.groq_key)
 
     async def _discover(self, client, deadline):
         if not self.discover or time.monotonic() - self._discovered_at < 900:
@@ -84,7 +86,7 @@ class GeminiPool:
                 self.cooldown[index, model] = until
 
     async def generate(self, system: str, question: str, validate: Callable[[str], Any]):
-        if not self.keys:
+        if not self.keys and not self.groq_key:
             raise ModelUnavailable('not_configured')
         with self._lock:
             if self._active >= 4:
@@ -96,6 +98,26 @@ class GeminiPool:
             async with asyncio.timeout(self.budget):
                 deadline = time.monotonic()+self.budget
                 async with httpx.AsyncClient(transport=self.transport, timeout=10.0, trust_env=True) as client:
+                    if self.groq_key:
+                        for g_model in self.groq_models:
+                            attempts += 1
+                            try:
+                                g_resp = await client.post('https://api.groq.com/openai/v1/chat/completions',
+                                    headers={'Authorization': f'Bearer {self.groq_key}', 'Content-Type': 'application/json'},
+                                    json={'model': g_model,
+                                          'messages': [{'role': 'system', 'content': system}, {'role': 'user', 'content': question}],
+                                          'response_format': {'type': 'json_object'},
+                                          'temperature': 0},
+                                    timeout=min(10.0, max(.1, deadline-time.monotonic())))
+                                if g_resp.status_code == 200:
+                                    g_text = g_resp.json()['choices'][0]['message']['content']
+                                    plan = validate(g_text)
+                                    return plan, {'model': g_model, 'attempts': attempts, 'used_backup': False, 'kind': 'groq'}
+                            except QuestionMismatch:
+                                question_mismatch = True
+                                continue
+                            except Exception:
+                                continue
                     await self._discover(client, deadline)
                     for index, key in enumerate(self.keys):
                         for model_index, model in enumerate(self.models):
