@@ -1,0 +1,87 @@
+{
+  "method": "Independent direct CSV scan and Decimal precision50. TN VED520100 from original contracts; first grade matched from original grade/product field without production normalizers. Trade date Oct1-Dec31, spot, cancellation excluded. Quantity=lots*lot_size; kilograms/1000. Brokers from actual buyer-side deal entries.",
+  "total_deals": 7119,
+  "total_quantity_tonnes": "423814.413",
+  "top5": [
+    {
+      "inn": "983531029",
+      "name": "\"Zoket Invest\" OK",
+      "quantity_tonnes": "20257.009",
+      "deals": 364,
+      "distinct_sellers": 33,
+      "brokers": {
+        "BK017": {
+          "name": "FIPI BROKER MCHJ",
+          "deals": 364,
+          "quantity_tonnes": "20257.009"
+        }
+      },
+      "share_pct": "4.7796885567457093536835426123179062341138454864205"
+    },
+    {
+      "inn": "975117742",
+      "name": "\"Fo‘sor Qurilish\" MChJ",
+      "quantity_tonnes": "7097.248",
+      "deals": 149,
+      "distinct_sellers": 28,
+      "brokers": {
+        "BK034": {
+          "name": "\"Hulun Broker\" AJ",
+          "deals": 120,
+          "quantity_tonnes": "5916.295"
+        },
+        "BK119": {
+          "name": "\"ЖЎЛЎ БРОКЕР\" МЧЖ",
+          "deals": 29,
+          "quantity_tonnes": "1180.953"
+        }
+      },
+      "share_pct": "1.6746122317458797702568930802266038083041786500074"
+    },
+    {
+      "inn": "908704393",
+      "name": "HO‘CHAL GROUP MCHJ",
+      "quantity_tonnes": "5524.574",
+      "deals": 108,
+      "distinct_sellers": 28,
+      "brokers": {
+        "BK107": {
+          "name": "\"ЗИЗАН БРОКЕР\" МЧЖ",
+          "deals": 108,
+          "quantity_tonnes": "5524.574"
+        }
+      },
+      "share_pct": "1.3035361305657153287988815991493899477175166291478"
+    },
+    {
+      "inn": "951632015",
+      "name": "YOVOL TRADE MCHJ",
+      "quantity_tonnes": "4931.482",
+      "deals": 72,
+      "distinct_sellers": 28,
+      "brokers": {
+        "BK076": {
+          "name": "VOQILIR BROKER XK",
+          "deals": 72,
+          "quantity_tonnes": "4931.482"
+        }
+      },
+      "share_pct": "1.1635946887912941271301219291001318541755209254764"
+    },
+    {
+      "inn": "903979966",
+      "name": "\"Moto Group\" MChJ",
+      "quantity_tonnes": "4246.929",
+      "deals": 65,
+      "distinct_sellers": 26,
+      "brokers": {
+        "BK113": {
+          "name": "\"Shumuz Broker\" XK",
+          "deals": 65,
+          "quantity_tonnes": "4246.929"
+        }
+      },
+      "share_pct": "1.0020728105818336102694081807925678072680364459431"
+    }
+  ]
+}

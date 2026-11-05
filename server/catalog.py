@@ -23,7 +23,7 @@ REGION_BY_RAW = {r[1]: r[0] for r in REGIONS}
 
 # TN VED 271019 is deliberately split: diesel and fuel oil are different products.
 COMMODITIES = [
-    ('cotton', '520100', 'Хлопок-сырец', 'Paxta xomashyosi', ['хлопок', 'хлопка', 'paxta', 'пахта']),
+    ('cotton', '520100', 'Хлопок-сырец', 'Paxta xomashyosi', ['хлопок', 'хлопка', 'paxta', 'paxta xom ashyo', 'пахта']),
     ('flour', '110100', 'Пшеничная мука', 'Bug‘doy uni', ['мук', 'bugdoy uni', "bug'doy uni", ' un ', 'уни']),
     ('wheat', '100199', 'Пшеница', 'Bug‘doy', ['пшениц', 'bugdoy', "bug'doy", 'буғдой']),
     ('rice', '100630', 'Рис', 'Guruch', ['рис ', 'риса', 'guruch', 'гуруч']),

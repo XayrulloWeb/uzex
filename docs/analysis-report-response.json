@@ -1,0 +1,301 @@
+{
+  "status": "answer",
+  "answer": "\"Zoket Invest\" OK (STIR / kod 983531029): Hajm — 20 257,0090 тонна; Bitimlar — 364; Turli sotuvchilar — 33; Ulush — 4,7797%.\nUlush maxraji: reyting cheklovidan oldingi ayni tanlanmaning jami — 423 814,4130 тонна.\n\"Zoket Invest\" OK: xaridor brokerlari — BK017 — FIPI BROKER MCHJ.",
+  "columns": [
+    {
+      "key": "id",
+      "label": "STIR / kod",
+      "kind": "text"
+    },
+    {
+      "key": "label",
+      "label": "Nomi",
+      "kind": "text"
+    },
+    {
+      "key": "quantity",
+      "label": "Hajm",
+      "kind": "decimal",
+      "unit": "тонна"
+    },
+    {
+      "key": "deals",
+      "label": "Bitimlar",
+      "kind": "integer"
+    },
+    {
+      "key": "distinct_sellers",
+      "label": "Turli sotuvchilar",
+      "kind": "integer"
+    },
+    {
+      "key": "share_pct",
+      "label": "Ulush",
+      "kind": "percent",
+      "unit": "%"
+    }
+  ],
+  "rows": [
+    {
+      "id": "983531029",
+      "label": "\"Zoket Invest\" OK",
+      "deals": 364,
+      "amount": "200420565274.01000000",
+      "quantity": "20257.0090000",
+      "distinct_sellers": 33,
+      "distinct_buyers": 1,
+      "weighted_price": "9893887.3588894589522076037977768583704",
+      "share_pct": "4.7796885567457093536835426123179062341"
+    }
+  ],
+  "interpretation": [
+    "Tahliliy hisobot",
+    "01.10.2025–31.12.2025 davrida",
+    "Spot",
+    "Paxta xomashyosi",
+    "Xaridorlar bo‘yicha",
+    "Bekor qilinganlarsiz",
+    "Nav 1",
+    "тонна"
+  ],
+  "provenance": {
+    "sql": "SELECT buyer_inn AS id,buyer_name AS label,count(*) AS deals,sum(amount_uzs) AS amount,sum((CASE WHEN unit='тонна' THEN (quantity)*1000 ELSE (quantity) END)*CAST('0.001' AS DECIMAL(4,3))) AS quantity,\n        count(DISTINCT seller_inn) AS distinct_sellers,count(DISTINCT buyer_inn) AS distinct_buyers\n        FROM trades WHERE TRUE AND year(deal_date)=? AND deal_date>=? AND deal_date<=? AND commodity=? AND form=? AND status<>? AND grade_norm=? AND unit IN ('килограмм','тонна') GROUP BY buyer_inn,buyer_name",
+    "parameters": [
+      2025,
+      "2025-10-01",
+      "2025-12-31",
+      "cotton",
+      "Спот",
+      "Аннулирован(Не оплачен)",
+      "1"
+    ],
+    "row_count": 7119,
+    "snapshot": "2026-10-30",
+    "sources": [
+      "deals_2022…2026.csv",
+      "contracts.csv",
+      "participants.csv",
+      "brokers.csv",
+      "usd_rates.csv"
+    ],
+    "period": {
+      "from": "2025-10-02",
+      "to": "2025-12-31"
+    },
+    "date_field": "deal_date",
+    "currency": "UZS",
+    "include_cancelled": false,
+    "statuses": [],
+    "method": "Each requested aggregate uses the same filtered source. Distinct counterparties use COUNT(DISTINCT INN). USD converted at each deal date; kilograms/tonnes converted before aggregation. Exact Decimal ranking and share = group / entire filtered source × 100 before top-N. A zero denominator has no defined share.",
+    "denominator": {
+      "measure": "quantity",
+      "value": "423814.4130000",
+      "sql": "SELECT count(*) AS deals,sum(amount_uzs) AS amount,sum((CASE WHEN unit='тонна' THEN (quantity)*1000 ELSE (quantity) END)*CAST('0.001' AS DECIMAL(4,3))) AS quantity FROM trades WHERE TRUE AND year(deal_date)=? AND deal_date>=? AND deal_date<=? AND commodity=? AND form=? AND status<>? AND grade_norm=? AND unit IN ('килограмм','тонна')",
+      "parameters": [
+        2025,
+        "2025-10-01",
+        "2025-12-31",
+        "cotton",
+        "Спот",
+        "Аннулирован(Не оплачен)",
+        "1"
+      ]
+    },
+    "operations": [
+      {
+        "title": "Asosiy hisob",
+        "sql": "SELECT buyer_inn AS id,buyer_name AS label,count(*) AS deals,sum(amount_uzs) AS amount,sum((CASE WHEN unit='тонна' THEN (quantity)*1000 ELSE (quantity) END)*CAST('0.001' AS DECIMAL(4,3))) AS quantity,\n        count(DISTINCT seller_inn) AS distinct_sellers,count(DISTINCT buyer_inn) AS distinct_buyers\n        FROM trades WHERE TRUE AND year(deal_date)=? AND deal_date>=? AND deal_date<=? AND commodity=? AND form=? AND status<>? AND grade_norm=? AND unit IN ('килограмм','тонна') GROUP BY buyer_inn,buyer_name",
+        "parameters": [
+          2025,
+          "2025-10-01",
+          "2025-12-31",
+          "cotton",
+          "Спот",
+          "Аннулирован(Не оплачен)",
+          "1"
+        ],
+        "row_count": 7119
+      },
+      {
+        "title": "Ulush maxraji",
+        "sql": "SELECT count(*) AS deals,sum(amount_uzs) AS amount,sum((CASE WHEN unit='тонна' THEN (quantity)*1000 ELSE (quantity) END)*CAST('0.001' AS DECIMAL(4,3))) AS quantity FROM trades WHERE TRUE AND year(deal_date)=? AND deal_date>=? AND deal_date<=? AND commodity=? AND form=? AND status<>? AND grade_norm=? AND unit IN ('килограмм','тонна')",
+        "parameters": [
+          2025,
+          "2025-10-01",
+          "2025-12-31",
+          "cotton",
+          "Спот",
+          "Аннулирован(Не оплачен)",
+          "1"
+        ],
+        "row_count": 7119
+      },
+      {
+        "title": "Brokerlar",
+        "sql": "SELECT buyer_inn AS company_inn,buyer_broker AS broker_code,coalesce(b.name,'') AS broker_name,count(*) AS deals,sum((CASE WHEN unit='тонна' THEN (quantity)*1000 ELSE (quantity) END)*CAST('0.001' AS DECIMAL(4,3))) AS quantity,'тонна' AS unit\n            FROM trades LEFT JOIN brokers b ON buyer_broker=b.code WHERE TRUE AND year(deal_date)=? AND deal_date>=? AND deal_date<=? AND commodity=? AND form=? AND status<>? AND grade_norm=? AND unit IN ('килограмм','тонна') AND buyer_inn IN (?)\n            GROUP BY buyer_inn,buyer_broker,b.name ORDER BY company_inn,quantity DESC,broker_code",
+        "parameters": [
+          2025,
+          "2025-10-01",
+          "2025-12-31",
+          "cotton",
+          "Спот",
+          "Аннулирован(Не оплачен)",
+          "1",
+          "983531029"
+        ],
+        "row_count": 364
+      }
+    ]
+  },
+  "plan": {
+    "action": "query",
+    "metric": "analysis",
+    "analysis": {
+      "measures": [
+        "quantity",
+        "deals",
+        "distinct_sellers"
+      ],
+      "sort_by": "quantity",
+      "share_by": "quantity",
+      "broker_details": true
+    },
+    "additional_metrics": [],
+    "share_target": null,
+    "share_basis": "both",
+    "comparison": false,
+    "month_comparison": null,
+    "years": [],
+    "group": "buyer",
+    "year": 2025,
+    "date_from": "2025-10-01",
+    "date_to": "2025-12-31",
+    "date_field": "deal_date",
+    "commodity": "cotton",
+    "region": null,
+    "statuses": [],
+    "include_cancelled": false,
+    "contract_type": null,
+    "form": "Спот",
+    "deal_id": null,
+    "contract_id": null,
+    "participant_inn": null,
+    "company_name": null,
+    "role": "any",
+    "broker_code": null,
+    "grade": "1",
+    "brand": null,
+    "quality_class": null,
+    "product_text": null,
+    "report_currency": "UZS",
+    "physical_unit": "тонна",
+    "delivered_only": false,
+    "limit": 1,
+    "order": "desc",
+    "reason": "unknown"
+  },
+  "sections": [
+    {
+      "title": "Natijalar",
+      "rows": [
+        {
+          "id": "983531029",
+          "label": "\"Zoket Invest\" OK",
+          "deals": 364,
+          "amount": "200420565274.01000000",
+          "quantity": "20257.0090000",
+          "distinct_sellers": 33,
+          "distinct_buyers": 1,
+          "weighted_price": "9893887.3588894589522076037977768583704",
+          "share_pct": "4.7796885567457093536835426123179062341"
+        }
+      ],
+      "columns": [
+        {
+          "key": "id",
+          "label": "STIR / kod",
+          "kind": "text"
+        },
+        {
+          "key": "label",
+          "label": "Nomi",
+          "kind": "text"
+        },
+        {
+          "key": "quantity",
+          "label": "Hajm",
+          "kind": "decimal",
+          "unit": "тонна"
+        },
+        {
+          "key": "deals",
+          "label": "Bitimlar",
+          "kind": "integer"
+        },
+        {
+          "key": "distinct_sellers",
+          "label": "Turli sotuvchilar",
+          "kind": "integer"
+        },
+        {
+          "key": "share_pct",
+          "label": "Ulush",
+          "kind": "percent",
+          "unit": "%"
+        }
+      ]
+    },
+    {
+      "title": "Tanlangan bitimlardagi brokerlar",
+      "rows": [
+        {
+          "company_inn": "983531029",
+          "broker_code": "BK017",
+          "broker_name": "FIPI BROKER MCHJ",
+          "deals": 364,
+          "quantity": "20257.0090000",
+          "unit": "тонна"
+        }
+      ],
+      "columns": [
+        {
+          "key": "company_inn",
+          "label": "STIR",
+          "kind": "text"
+        },
+        {
+          "key": "broker_code",
+          "label": "Broker kodi",
+          "kind": "text"
+        },
+        {
+          "key": "broker_name",
+          "label": "Broker",
+          "kind": "text"
+        },
+        {
+          "key": "deals",
+          "label": "Bitimlar",
+          "kind": "integer"
+        },
+        {
+          "key": "quantity",
+          "label": "Hajm",
+          "kind": "decimal"
+        },
+        {
+          "key": "unit",
+          "label": "Birlik",
+          "kind": "text"
+        }
+      ]
+    }
+  ],
+  "provider": {
+    "kind": "local",
+    "model": "verified-analysis",
+    "attempts": 0,
+    "used_backup": false
+  },
+  "elapsed_ms": 248
+}

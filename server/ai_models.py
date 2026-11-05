@@ -47,11 +47,29 @@ class MonthComparison(BaseModel):
         return self
 
 
+class AnalysisSpec(BaseModel):
+    """Composable aggregates over the filtered dataset; never model-written SQL."""
+    model_config = ConfigDict(extra='forbid')
+    measures: list[Literal['deals','amount','quantity','distinct_sellers','distinct_buyers','weighted_price']] = Field(min_length=1,max_length=6)
+    sort_by: Literal['deals','amount','quantity','distinct_sellers','distinct_buyers','weighted_price'] = 'quantity'
+    share_by: Literal['deals','amount','quantity'] | None = None
+    broker_details: bool = False
+
+    @model_validator(mode='after')
+    def validate_measures(self):
+        if len(set(self.measures))!=len(self.measures) or self.sort_by not in self.measures:
+            raise ValueError('Ranking measure must be selected exactly once')
+        if self.share_by and self.share_by not in self.measures:
+            raise ValueError('Share base must be selected')
+        return self
+
+
 class QueryPlan(BaseModel):
     """A model chooses a typed operation, never executable SQL or factual prose."""
     model_config = ConfigDict(extra='forbid')
     action: Literal['query', 'clarify', 'unsupported'] = 'query'
-    metric: Literal['count', 'amount', 'volume', 'weighted_price', 'min_price', 'max_price', 'min_amount', 'max_amount', 'first_deal', 'last_deal', 'share', 'late_delivery', 'records', 'detail', 'rate', 'participant', 'broker', 'contract'] = 'count'
+    metric: Literal['analysis','count', 'amount', 'volume', 'weighted_price', 'min_price', 'max_price', 'min_amount', 'max_amount', 'first_deal', 'last_deal', 'share', 'late_delivery', 'records', 'detail', 'rate', 'participant', 'broker', 'contract'] = 'count'
+    analysis: AnalysisSpec | None = None
     additional_metrics: list[Literal['count','amount','first_deal','last_deal']] = Field(default_factory=list,max_length=3)
     share_target: ShareTarget | None = None
     share_basis: Literal['amount','count','both'] = 'both'
@@ -88,6 +106,12 @@ class QueryPlan(BaseModel):
 
     @model_validator(mode='after')
     def validate_catalog(self):
+        if (self.metric=='analysis')!=(self.analysis is not None):
+            raise ValueError('Analysis metric requires its aggregate specification')
+        if self.analysis and (self.additional_metrics or self.comparison or self.month_comparison):
+            raise ValueError('Aggregate analysis uses one common filtered source')
+        if self.analysis and self.analysis.broker_details and self.group not in ['buyer','seller']:
+            raise ValueError('Broker details require a buyer or seller grouping')
         if self.additional_metrics:
             metrics=[self.metric]+self.additional_metrics
             if self.metric not in ['count','amount','first_deal','last_deal'] or len(set(metrics))!=len(metrics):
@@ -257,6 +281,7 @@ Every explicit condition is checked independently before execution. Preserve exp
 Shares/percentages ARE supported. Use metric=share, share_target={dimension:contract_type,value:Экспортный} for export share. Other share dimensions are commodity, region (seller warehouse), and status with a valid vocabulary value. share_target describes the numerator; DO NOT also filter the denominator to that same target. Other filters apply to both. share_basis is amount, count, or both; if unspecified show both rather than ask a generic clarification. Monetary shares use UZS converted at each trade date. For two or more named years use group=year and comparison=true; years contains only explicitly requested years. Share differences show percentage points AND relative percent change, with a zero-baseline check. For ordinary amount/count/volume growth use the existing metric, group=year, comparison=true. Never replace export amount growth with export market share. 2026 data end on October30; all comparisons must state this partial coverage. Numeric percentages and comparisons are computed by the server, never supplied as factual model text.
 Monthly amount/count comparisons are supported with group=month, comparison=true and month_comparison={baseline:YYYY-MM-01,target:YYYY-MM-01,include_usd_rate:boolean}. Baseline is the month after "относительно", "по сравнению с", or before Uzbek "nisbatan"; target is the month being evaluated, even when it is chronologically earlier. Use the two full month boundaries for date_from/date_to; only those two months are aggregated. If the same question ALSO requests the dollar exchange rate, include_usd_rate MUST be true. The server reports target-month daily mean/min/max from usd_rates, and computes the trade change independently with exact conversion at each deal date. Do not replace a rate+export comparison with either operation alone. For example, June 2026 exports relative to May uses baseline=2026-05-01,target=2026-06-01. No profit or causal claim can be inferred from these aggregates.
 Several operations over the SAME filtered trade set are supported: choose one metric and put the other requested metrics into additional_metrics. Allowed compound operations: count, amount, first_deal, last_deal. For "2022-yilda jami bitimlar soni va birinchi bitim tafsilotlari?" use metric=count,additional_metrics=[first_deal],year=2022. The server executes every operation and shows separate evidence tables/SQL. First/last details refer to the actual trade selected by date and time, not an invented ID. Keep a common period, commodity, region, status and currency; group must be none. Different explicitly scoped subsets/years cannot be represented by a common scope: clarify rather than merging them. Do not drop a requested operation or add an unrequested one. An amount requested specifically for the first trade belongs to that trade's details, not a separate total.
+General analytical reports use metric=analysis and analysis={measures:[...],sort_by:...,share_by:...or null,broker_details:boolean}. Measures are deals (count), amount, quantity (physical volume), distinct_sellers, distinct_buyers, weighted_price. Group by buyer/seller/broker/commodity/region/month/year/status/form/category/auction or none for totals. Combine all requested measures in one report; do not replace a physical-volume share with an amount/count share. share_by divides EACH group's measure by the total of the SAME complete filtered source, before ranking/limit. Buyer/seller INN and exact name are returned automatically. broker_details retrieves ALL actual buyer-side/seller-side brokers for the selected companies, with their trade counts and exact source identities; never assume one broker per company. Ranking is based on sort_by, order and limit, not a convenient different measure. Quarter 4/4-chorak/4-choragida means October1 through December31 of the named year. Preserve commodity, grade (1-sort), form (spot), cancellation exclusions (bekor qilinganlarsiz), reporting unit (tonnada) and every requested auxiliary statistic. An example report can rank buyers by quantity and return deals, distinct_sellers and quantity share, plus broker_details. This is a generic aggregate report, not a special-case answer for one commodity or company. Period, filters, sums, distinct counts, joins, ranks and percentages are verified/computed by the server. No SQL or calculated factual values from the model.
 '''+ '\nVOCABULARY: '+json.dumps(vocabulary, ensure_ascii=False)+'\nSCHEMA: '+json.dumps(QueryPlan.model_json_schema(), ensure_ascii=False)
 
 

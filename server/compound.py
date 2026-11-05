@@ -59,6 +59,7 @@ def local_compound_plan(request):
 
 def validate_operations(request,plan):
     from server.question_checks import QuestionMismatch
+    if plan.analysis:return
     metrics=requested_metrics(request.question)
     if not plan.additional_metrics:
         if len(metrics)>1 and not plan.month_comparison and plan.metric!='share':

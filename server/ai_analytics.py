@@ -13,6 +13,7 @@ from server.question_checks import QuestionMismatch, calendar_mentions, question
 from server.ratios import comparison_answer, share_result
 from server.monthly import local_monthly_plan, monthly_result
 from server.compound import execute_compound, local_compound_plan
+from server.analysis_reports import analysis_result, local_analysis_plan
 
 
 def outcome(reason: str, lang='ru', kind='no_data'):
@@ -46,12 +47,12 @@ def constrain_request(request: AIQuestion, plan: QueryPlan):
     if plan.company_name and normalize(plan.company_name) not in context:
         raise QuestionMismatch('company_not_supplied')
     if plan.action == 'query':
-        exact_plan = local_compound_plan(request) or local_monthly_plan(request) or local_ratio_plan(request)
-        if not exact_plan and not plan.additional_metrics:
+        exact_plan = local_analysis_plan(request) or local_compound_plan(request) or local_monthly_plan(request) or local_ratio_plan(request)
+        if not exact_plan and not plan.additional_metrics and not plan.analysis:
             exact_plan=local_chronology_plan(request) or local_count_plan(request)
         if exact_plan:
             plan = exact_plan
-        elif not plan.additional_metrics and (metric := chronological_metric(q)):
+        elif not plan.additional_metrics and not plan.analysis and (metric := chronological_metric(q)):
             plan.metric = metric
             plan.order = 'asc' if metric == 'first_deal' else 'desc'
             plan.limit = 1
@@ -199,7 +200,9 @@ def execute_plan(plan: QueryPlan, request: AIQuestion):
         return outcome('out_of_period', lang)
     if plan.date_to and plan.date_to > last:
         # A named whole year/month may extend past the snapshot; expose the actual end.
-        if plan.date_to.year == 2026 and plan.date_to.month <= 10:
+        if plan.analysis and plan.date_from and plan.date_from<=last:
+            plan.date_to=last
+        elif plan.date_to.year == 2026 and plan.date_to.month <= 10:
             plan.date_to = last
         elif (plan.year == 2026 and not plan.date_from) or (plan.date_to==date(2026,12,31) and not any(calendar_mentions(question_text(request.question)))):
             plan.date_to = last
@@ -287,6 +290,7 @@ def execute_plan(plan: QueryPlan, request: AIQuestion):
     total = query(f'SELECT count(*) AS count,min({plan.date_field}) AS first_date,max({plan.date_field}) AS last_date FROM trades WHERE '+condition, parameters)[0]
     if total['count']==0 and not plan.month_comparison and (plan.metric!='count' or plan.deal_id or plan.contract_id or plan.brand or plan.product_text):
         return outcome('not_found',lang)
+    if plan.analysis:return analysis_result(plan,lang,condition,parameters,amount,quantity,unit,total)
     if plan.month_comparison: return monthly_result(plan,lang,condition,parameters,amount,total)
     if plan.metric=='share': return share_result(plan,lang,condition,parameters,total)
     if plan.metric in ['detail','records','first_deal','last_deal','min_price','max_price','min_amount','max_amount']:
@@ -413,7 +417,7 @@ def record_result(plan, lang, condition, parameters, amount, quantity, unit, tot
 
 def plan_context(plan,lang):
     uz = lang=='uz'
-    metrics = {'share':('Доля в общем итоге','Jami tarkibidagi ulush'),'count':('Число сделок','Bitimlar soni'), 'amount':('Сумма сделок','Bitimlar summasi'),
+    metrics = {'analysis':('Аналитический отчёт','Tahliliy hisobot'),'share':('Доля в общем итоге','Jami tarkibidagi ulush'),'count':('Число сделок','Bitimlar soni'), 'amount':('Сумма сделок','Bitimlar summasi'),
                'volume':('Физический объём','Fizik hajm'), 'weighted_price':('Средневзвешенная цена','O‘rtacha tortilgan narx'),
                'min_price':('Минимальная цена','Eng past narx'), 'max_price':('Максимальная цена','Eng yuqori narx'),
                'min_amount':('Минимальная сумма сделки','Eng kichik bitim summasi'), 'max_amount':('Максимальная сумма сделки','Eng katta bitim summasi'),
@@ -443,6 +447,7 @@ def plan_context(plan,lang):
     labels.append(scope_text(plan,lang))
     if plan.date_field!='deal_date': labels.append(('По дате оплаты' if plan.date_field=='payment_date' else 'По дате поставки') if not uz else ('To‘lov sanasi bo‘yicha' if plan.date_field=='payment_date' else 'Yetkazish sanasi bo‘yicha'))
     if plan.contract_type: labels.append(('Eksport' if plan.contract_type=='Экспортный' else 'Ichki') if uz else plan.contract_type)
+    if plan.form:labels.append({'Спот':'Spot','Форвард':'Forvard','Фьючерс':'Fyuchers'}.get(plan.form,plan.form) if uz else plan.form)
     if plan.commodity: labels.append(commodity_label(plan.commodity,lang))
     if plan.region: labels.append(('Ombor: ' if uz else 'Склад: ')+region_label(plan.region,lang))
     if plan.group!='none':

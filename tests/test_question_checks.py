@@ -133,6 +133,9 @@ BAD_PLANS = [
 
 @pytest.mark.parametrize('question,plan',BAD_PLANS)
 def test_mismatched_model_plan_is_blocked_before_calculation(monkeypatch,question,plan):
+    # Exercise the model-only path; verified local rankings have separate factual tests.
+    monkeypatch.setattr('server.ai.local_analysis_plan',lambda request:None)
+    monkeypatch.setattr('server.ai_analytics.local_analysis_plan',lambda request:None)
     class WrongPool:
         async def generate(self,system,prompt,validate):
             return validate(json.dumps(plan)),{'model':'deliberately-wrong','attempts':1,'used_backup':False}

@@ -98,6 +98,15 @@ def relative_period(text):
 def _calendar_checks(q, plan, require, scope_year):
     years = sorted({int(value) for value in re.findall(r'(?<!\d)((?:19|20)\d{2})(?!\d)',q)})
     dates,months = calendar_mentions(q)
+    from server.analysis_reports import quarter_number
+    if quarter_number(q):
+        from server.ai_models import AIQuestion
+        from server.analysis_reports import period_for_question
+        period=period_for_question(AIQuestion(question=q,scope={'year':scope_year}))
+        if period:
+            require('date_from',period[0]);require('date_to',period[1])
+            return
+        raise QuestionMismatch('quarter_requires_year')
     if plan.month_comparison:
         from server.monthly import month_end
         comparison=plan.month_comparison
@@ -152,6 +161,14 @@ def validate_question(request, plan):
         if actual!=expected: raise QuestionMismatch(field)
 
     q = question_text(request.question)
+    from server.analysis_reports import analysis_intent, requirements as analysis_requirements
+    needed=analysis_requirements(q)
+    if not plan.analysis and (set(needed['measures']) & {'distinct_sellers','distinct_buyers'} or
+                              (analysis_intent(q) and (needed['broker_details'] or (needed['share_requested'] and needed['share_by']=='quantity')))):
+        raise QuestionMismatch('aggregate_analysis_required')
+    if plan.analysis:
+        from server.analysis_reports import validate_analysis
+        validate_analysis(request,plan)
     from server.compound import validate_operations
     validate_operations(request,plan)
     from server.monthly import month_requirements, rate_requested
@@ -258,7 +275,7 @@ def validate_question(request, plan):
     elif plan.contract_type and not re.search(r'экспорт|eksport' if plan.contract_type=='Экспортный' else r'внутренн|ichki',previous):
         raise QuestionMismatch('unexpected_contract_type')
 
-    without = bool(re.search(r'без\s+(?:учета\s+)?аннулир|исключ\w*\s+аннулир|не\s+учитыв\w*\s+аннулир|bekor\s+qilingan\w*(?:\s+bitim\w*)?\s+hisobga\s+olma|bekor\s+qilingan\w*\s+tashqari',q))
+    without = bool(re.search(r'без\s+(?:учета\s+)?аннулир|исключ\w*\s+аннулир|не\s+учитыв\w*\s+аннулир|bekor\s+qilingan\w*siz\b|bekor\s+qilingan\w*(?:\s+bitim\w*)?\s+hisobga\s+olma|bekor\s+qilingan\w*\s+tashqari',q))
     including = bool(re.search(r'включая\s+аннулир|с\s+учетом\s+аннулир|bekor\s+qilingan\w*\s+ham',q))
     all_statuses = bool(re.search(r'все\s+состояни|barcha\s+holat|hamma\s+holat',q))
     cancelled = bool(re.search(r'аннулир|bekor\s+qilingan',q)) and not without and not including
@@ -306,20 +323,25 @@ def validate_question(request, plan):
     if actual_delivery: require('delivered_only',True)
     elif plan.delivered_only and not re.search(r'постав|yetkaz',evidence): raise QuestionMismatch('unexpected_delivered_only')
 
-    temporal = chronological_metric(q) if not plan.additional_metrics else None
+    temporal = chronological_metric(q) if not plan.additional_metrics and not plan.analysis else None
     weighted = bool(re.search(r'средневзвеш|o\'rtacha\s+tortilgan',q))
     price = bool(re.search(r'\bцен\w*|\bnarx\w*',q))
     amount = bool(re.search(r'\bсумм\w*|\bоборот\w*|\bsumma\w*|\baylanma\w*',q))
     volume = bool(re.search(r'\bобъем\w*|\bhajm\w*|сколько(?:\s+(?:всего|было))?\s+(?:тонн|килограмм|литр|штук|метр)|qancha\s+(?:tonna|kilogram|litr|dona)',q))
     counting = bool(re.search(r'сколько(?:\s+\w+){0,3}\s+сдел|в\s+скольких.*?сделк|число\s+сдел|количество\s+сдел|nechta(?:\s+noyob)?\s+bitim|bitimlar\s+soni',q))
     late = bool(re.search(r'с\s+опозданием|позже\s+срока|kech\s+yetkaz',q))
+    if plan.analysis:
+        from server.ai_models import chronological_metrics
+        if chronological_metrics(q) or late or (price and not weighted):
+            raise QuestionMismatch('analysis_unrepresented_operation')
     if plan.additional_metrics and (volume or price or weighted or late or share_intent(q)):
         raise QuestionMismatch('additional_compound_measure_not_supported')
     if plan.month_comparison and (volume or price or weighted or late):
         raise QuestionMismatch('additional_monthly_measure_not_supported')
     if plan.metric=='share' and (volume or late): raise QuestionMismatch('unsupported_share_basis_or_filter')
     if late and (amount or volume or price): raise QuestionMismatch('late_calculation_not_supported')
-    if plan.additional_metrics: pass  # Every operation was checked above; common filters still apply.
+    if plan.analysis: pass  # Aggregate measures/rank/share are independently checked above.
+    elif plan.additional_metrics: pass  # Every operation was checked above; common filters still apply.
     elif share_intent(q): require('metric','share')
     elif temporal: require('metric',temporal)
     elif weighted: require('metric','weighted_price')
@@ -333,7 +355,7 @@ def validate_question(request, plan):
 
     ranked = bool(re.search(r'\bтоп|\btop|крупнейш|наибольш|лидер|eng\s+yirik|eng\s+ko\'p',q))
     individual_deal = bool(re.search(r'(?:крупнейш\w*|наибольш\w*)\s+(?:экспортн\w*\s+|внутренн\w*\s+)?сделк',q))
-    if ranked:
+    if ranked and not plan.analysis:
         buyer = bool(re.search(r'покупател|xaridor',q))
         seller = bool(re.search(r'продав[це]|sotuvchi',q))
         if buyer!=seller and not individual_deal: require('group','buyer' if buyer else 'seller')
@@ -361,7 +383,7 @@ def validate_question(request, plan):
     wanted_groups = {group for group,pattern in groups.items() if re.search(pattern,q)}
     if len(wanted_groups)>1: raise QuestionMismatch('multiple_groups')
     if wanted_groups: require('group',wanted_groups.pop())
-    elif plan.group!='none' and not ranked and not (plan.comparison and (plan.group=='year' or plan.month_comparison)) and not re.search(r'сравн|taqqosla|solishtir',q):
+    elif plan.group!='none' and not plan.analysis and not ranked and not (plan.comparison and (plan.group=='year' or plan.month_comparison)) and not re.search(r'сравн|taqqosla|solishtir',q):
         if not previous or not re.search(groups[plan.group],previous): raise QuestionMismatch('unexpected_group')
 
     if plan.metric!='rate' and plan.metric!='count':

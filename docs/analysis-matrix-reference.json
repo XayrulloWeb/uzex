@@ -1,0 +1,739 @@
+{
+  "method": "Independent Python csv and Decimal precision50, original contracts/participants/rates joined by literal source identifiers. No production parser, catalog normalization, SQL or analytic helper used. Eight different date/product/role/ranking scopes.",
+  "cases": [
+    {
+      "id": "cotton_q4_buyer_volume",
+      "year": 2025,
+      "from": "2025-10-01",
+      "to": "2025-12-31",
+      "tnved": "520100",
+      "grade": 1,
+      "form": "Спот",
+      "exclude_cancelled": true,
+      "role": "buyer",
+      "rank": "quantity",
+      "unit": "тонна",
+      "expected": {
+        "total_deals": 7119,
+        "total_quantity": "423814.413",
+        "total_amount": "4198884944633.90",
+        "top5": [
+          {
+            "inn": "983531029",
+            "name": "\"Zoket Invest\" OK",
+            "quantity": "20257.009",
+            "amount": "200420565274.01",
+            "deals": 364,
+            "brokers": {
+              "BK017": {
+                "deals": 364,
+                "quantity": "20257.009"
+              }
+            },
+            "distinct_sellers": 33,
+            "distinct_buyers": 1,
+            "share_pct": "4.7796885567457093536835426123179062341138454864205"
+          },
+          {
+            "inn": "975117742",
+            "name": "\"Fo‘sor Qurilish\" MChJ",
+            "quantity": "7097.248",
+            "amount": "69112422552.46",
+            "deals": 149,
+            "brokers": {
+              "BK034": {
+                "deals": 120,
+                "quantity": "5916.295"
+              },
+              "BK119": {
+                "deals": 29,
+                "quantity": "1180.953"
+              }
+            },
+            "distinct_sellers": 28,
+            "distinct_buyers": 1,
+            "share_pct": "1.6746122317458797702568930802266038083041786500074"
+          },
+          {
+            "inn": "908704393",
+            "name": "HO‘CHAL GROUP MCHJ",
+            "quantity": "5524.574",
+            "amount": "55046491151.73",
+            "deals": 108,
+            "brokers": {
+              "BK107": {
+                "deals": 108,
+                "quantity": "5524.574"
+              }
+            },
+            "distinct_sellers": 28,
+            "distinct_buyers": 1,
+            "share_pct": "1.3035361305657153287988815991493899477175166291478"
+          },
+          {
+            "inn": "951632015",
+            "name": "YOVOL TRADE MCHJ",
+            "quantity": "4931.482",
+            "amount": "48813911960.44",
+            "deals": 72,
+            "brokers": {
+              "BK076": {
+                "deals": 72,
+                "quantity": "4931.482"
+              }
+            },
+            "distinct_sellers": 28,
+            "distinct_buyers": 1,
+            "share_pct": "1.1635946887912941271301219291001318541755209254764"
+          },
+          {
+            "inn": "903979966",
+            "name": "\"Moto Group\" MChJ",
+            "quantity": "4246.929",
+            "amount": "42344900238.43",
+            "deals": 65,
+            "brokers": {
+              "BK113": {
+                "deals": 65,
+                "quantity": "4246.929"
+              }
+            },
+            "distinct_sellers": 26,
+            "distinct_buyers": 1,
+            "share_pct": "1.0020728105818336102694081807925678072680364459431"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cotton_2024_buyer_volume",
+      "year": 2024,
+      "from": "2024-01-01",
+      "to": "2024-12-31",
+      "tnved": "520100",
+      "role": "buyer",
+      "rank": "quantity",
+      "unit": "тонна",
+      "expected": {
+        "total_deals": 30037,
+        "total_quantity": "1789727.901",
+        "total_amount": "13822132161737.13",
+        "top5": [
+          {
+            "inn": "983531029",
+            "name": "\"Zoket Invest\" OK",
+            "quantity": "93423.483",
+            "amount": "720300173877.48",
+            "deals": 1595,
+            "brokers": {
+              "BK017": {
+                "deals": 1595,
+                "quantity": "93423.483"
+              }
+            },
+            "distinct_sellers": 52,
+            "distinct_buyers": 1,
+            "share_pct": "5.2199824871590913416731720270588774824045166405438"
+          },
+          {
+            "inn": "975117742",
+            "name": "\"Fo‘sor Qurilish\" MChJ",
+            "quantity": "35970.419",
+            "amount": "278744457958.41",
+            "deals": 619,
+            "brokers": {
+              "BK034": {
+                "deals": 488,
+                "quantity": "29429.938"
+              },
+              "BK119": {
+                "deals": 131,
+                "quantity": "6540.481"
+              }
+            },
+            "distinct_sellers": 49,
+            "distinct_buyers": 1,
+            "share_pct": "2.0098261294301630267762138441400987020763889851209"
+          },
+          {
+            "inn": "908704393",
+            "name": "HO‘CHAL GROUP MCHJ",
+            "quantity": "25477.779",
+            "amount": "196341146559.58",
+            "deals": 440,
+            "brokers": {
+              "BK107": {
+                "deals": 440,
+                "quantity": "25477.779"
+              }
+            },
+            "distinct_sellers": 46,
+            "distinct_buyers": 1,
+            "share_pct": "1.4235560045616118491746081350273367616231848642337"
+          },
+          {
+            "inn": "951632015",
+            "name": "YOVOL TRADE MCHJ",
+            "quantity": "16932.044",
+            "amount": "132439206859.78",
+            "deals": 294,
+            "brokers": {
+              "BK076": {
+                "deals": 294,
+                "quantity": "16932.044"
+              }
+            },
+            "distinct_sellers": 42,
+            "distinct_buyers": 1,
+            "share_pct": "0.94606805819696499216614716004251419445240016962780"
+          },
+          {
+            "inn": "903979966",
+            "name": "\"Moto Group\" MChJ",
+            "quantity": "15736.789",
+            "amount": "123215020136.85",
+            "deals": 294,
+            "brokers": {
+              "BK113": {
+                "deals": 294,
+                "quantity": "15736.789"
+              }
+            },
+            "distinct_sellers": 43,
+            "distinct_buyers": 1,
+            "share_pct": "0.87928388394722802055707573170364292152810328233241"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cotton_2025_seller_volume",
+      "year": 2025,
+      "from": "2025-01-01",
+      "to": "2025-12-31",
+      "tnved": "520100",
+      "role": "seller",
+      "rank": "quantity",
+      "unit": "тонна",
+      "expected": {
+        "total_deals": 33056,
+        "total_quantity": "1976409.444",
+        "total_amount": "18172111463288.41",
+        "top5": [
+          {
+            "inn": "972636724",
+            "name": "\"Lidayo‘ Agro\" MChJ",
+            "quantity": "138999.823",
+            "amount": "1231233569330.47",
+            "deals": 2287,
+            "brokers": {
+              "BK041": {
+                "deals": 441,
+                "quantity": "28306.872"
+              },
+              "BK067": {
+                "deals": 1846,
+                "quantity": "110692.951"
+              }
+            },
+            "distinct_sellers": 1,
+            "distinct_buyers": 1437,
+            "share_pct": "7.0329467116227764797100412964835033443606637613294"
+          },
+          {
+            "inn": "925910430",
+            "name": "SITO‘TOM TEKSTIL MCHJ",
+            "quantity": "123171.516",
+            "amount": "1190762058157.22",
+            "deals": 2076,
+            "brokers": {
+              "BK111": {
+                "deals": 1625,
+                "quantity": "95513.401"
+              },
+              "BK025": {
+                "deals": 451,
+                "quantity": "27658.115"
+              }
+            },
+            "distinct_sellers": 1,
+            "distinct_buyers": 1301,
+            "share_pct": "6.2320849747973578292616173109118173187599886817784"
+          },
+          {
+            "inn": "999222902",
+            "name": "\"Nutunim Fermer\" MChJ",
+            "quantity": "116451.040",
+            "amount": "1144779944400.90",
+            "deals": 1952,
+            "brokers": {
+              "BK085": {
+                "deals": 1952,
+                "quantity": "116451.040"
+              }
+            },
+            "distinct_sellers": 1,
+            "distinct_buyers": 1270,
+            "share_pct": "5.8920503721292681700017215663537377834954324373285"
+          },
+          {
+            "inn": "959121394",
+            "name": "\"ВУРА ФЕРМЕР\" МЧЖ",
+            "quantity": "88902.601",
+            "amount": "852457023052.26",
+            "deals": 1494,
+            "brokers": {
+              "BK021": {
+                "deals": 1494,
+                "quantity": "88902.601"
+              }
+            },
+            "distinct_sellers": 1,
+            "distinct_buyers": 992,
+            "share_pct": "4.4981874211283115079063546510760348299570258479295"
+          },
+          {
+            "inn": "937804684",
+            "name": "PEVO‘ KLASTER MCHJ",
+            "quantity": "88233.662",
+            "amount": "828270601732.90",
+            "deals": 1497,
+            "brokers": {
+              "BK068": {
+                "deals": 1497,
+                "quantity": "88233.662"
+              }
+            },
+            "distinct_sellers": 1,
+            "distinct_buyers": 1016,
+            "share_pct": "4.4643412460844322903366980673059362288697908083868"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cement_2024_buyer_amount",
+      "year": 2024,
+      "from": "2024-01-01",
+      "to": "2024-12-31",
+      "tnved": "252329",
+      "role": "buyer",
+      "rank": "amount",
+      "unit": "тонна",
+      "expected": {
+        "total_deals": 8220,
+        "total_quantity": "1351638",
+        "total_amount": "1175241082920",
+        "top5": [
+          {
+            "inn": "955082698",
+            "name": "LO‘HI IMPEKS MCHJ",
+            "quantity": "51765",
+            "amount": "44585971247",
+            "deals": 342,
+            "brokers": {
+              "BK097": {
+                "deals": 342,
+                "quantity": "51765"
+              }
+            },
+            "distinct_sellers": 19,
+            "distinct_buyers": 1,
+            "share_pct": "3.7937723497737032291798262964011666563838913487938"
+          },
+          {
+            "inn": "942453971",
+            "name": "\"Qo‘jun Logistik\" MChJ",
+            "quantity": "27873",
+            "amount": "24787713833",
+            "deals": 178,
+            "brokers": {
+              "BK053": {
+                "deals": 178,
+                "quantity": "27873"
+              }
+            },
+            "distinct_sellers": 19,
+            "distinct_buyers": 1,
+            "share_pct": "2.1091599156330146716379222880953641603146961573885"
+          },
+          {
+            "inn": "994051945",
+            "name": "\"ПАФИВЎР ПЛУС\" МЧЖ",
+            "quantity": "22507",
+            "amount": "20231315552",
+            "deals": 139,
+            "brokers": {
+              "BK042": {
+                "deals": 139,
+                "quantity": "22507"
+              }
+            },
+            "distinct_sellers": 16,
+            "distinct_buyers": 1,
+            "share_pct": "1.7214608854324035495231171083574597678258638456958"
+          },
+          {
+            "inn": "959028880",
+            "name": "\"ЛАЧЕР ПЛУС\" АЖ",
+            "quantity": "21325",
+            "amount": "18840546333",
+            "deals": 137,
+            "brokers": {
+              "BK101": {
+                "deals": 137,
+                "quantity": "21325"
+              }
+            },
+            "distinct_sellers": 17,
+            "distinct_buyers": 1,
+            "share_pct": "1.6031218280923980822472590898864796808595895336555"
+          },
+          {
+            "inn": "950953874",
+            "name": "RAFUR SAVDO MAS’ULIYATI CHEKLANGAN JAMIYATI",
+            "quantity": "20978",
+            "amount": "18286681978",
+            "deals": 113,
+            "brokers": {
+              "BK051": {
+                "deals": 88,
+                "quantity": "15021"
+              },
+              "BK068": {
+                "deals": 25,
+                "quantity": "5957"
+              }
+            },
+            "distinct_sellers": 17,
+            "distinct_buyers": 1,
+            "share_pct": "1.5559941056999957926555905324937038833924905522311"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cement_q2_buyer_volume",
+      "year": 2024,
+      "from": "2024-04-01",
+      "to": "2024-06-30",
+      "tnved": "252329",
+      "role": "buyer",
+      "rank": "quantity",
+      "unit": "тонна",
+      "expected": {
+        "total_deals": 2458,
+        "total_quantity": "390196",
+        "total_amount": "347346728792",
+        "top5": [
+          {
+            "inn": "955082698",
+            "name": "LO‘HI IMPEKS MCHJ",
+            "quantity": "14595",
+            "amount": "12730615831",
+            "deals": 107,
+            "brokers": {
+              "BK097": {
+                "deals": 107,
+                "quantity": "14595"
+              }
+            },
+            "distinct_sellers": 16,
+            "distinct_buyers": 1,
+            "share_pct": "3.7404278875231934719986878389322289311012926836769"
+          },
+          {
+            "inn": "942453971",
+            "name": "\"Qo‘jun Logistik\" MChJ",
+            "quantity": "7305",
+            "amount": "6614531708",
+            "deals": 50,
+            "brokers": {
+              "BK053": {
+                "deals": 50,
+                "quantity": "7305"
+              }
+            },
+            "distinct_sellers": 14,
+            "distinct_buyers": 1,
+            "share_pct": "1.8721360547007145127064347148612492183415514254375"
+          },
+          {
+            "inn": "994051945",
+            "name": "\"ПАФИВЎР ПЛУС\" МЧЖ",
+            "quantity": "6678",
+            "amount": "6071691471",
+            "deals": 37,
+            "brokers": {
+              "BK042": {
+                "deals": 37,
+                "quantity": "6678"
+              }
+            },
+            "distinct_sellers": 11,
+            "distinct_buyers": 1,
+            "share_pct": "1.7114475801904683799936442198279838850218864365601"
+          },
+          {
+            "inn": "950953874",
+            "name": "RAFUR SAVDO MAS’ULIYATI CHEKLANGAN JAMIYATI",
+            "quantity": "5758",
+            "amount": "5043057794",
+            "deals": 32,
+            "brokers": {
+              "BK051": {
+                "deals": 25,
+                "quantity": "4124"
+              },
+              "BK068": {
+                "deals": 7,
+                "quantity": "1634"
+              }
+            },
+            "distinct_sellers": 10,
+            "distinct_buyers": 1,
+            "share_pct": "1.4756686383253544372571733180247875426708628484146"
+          },
+          {
+            "inn": "959028880",
+            "name": "\"ЛАЧЕР ПЛУС\" АЖ",
+            "quantity": "4913",
+            "amount": "4555486059",
+            "deals": 38,
+            "brokers": {
+              "BK101": {
+                "deals": 38,
+                "quantity": "4913"
+              }
+            },
+            "distinct_sellers": 12,
+            "distinct_buyers": 1,
+            "share_pct": "1.2591108058514182615916103701729387282288900962593"
+          }
+        ]
+      }
+    },
+    {
+      "id": "wheat_q1_seller_volume",
+      "year": 2023,
+      "from": "2023-01-01",
+      "to": "2023-03-31",
+      "tnved": "100199",
+      "exclude_cancelled": true,
+      "role": "seller",
+      "rank": "quantity",
+      "unit": "тонна",
+      "expected": {
+        "total_deals": 849,
+        "total_quantity": "249058",
+        "total_amount": "908065675022",
+        "top5": [
+          {
+            "inn": "931877368",
+            "name": "\"Boqo‘bo Klaster\" MChJ",
+            "quantity": "106709",
+            "amount": "391578592355",
+            "deals": 381,
+            "brokers": {
+              "BK096": {
+                "deals": 381,
+                "quantity": "106709"
+              }
+            },
+            "distinct_sellers": 1,
+            "distinct_buyers": 306,
+            "share_pct": "42.845040111138770888708654209059737089352680901637"
+          },
+          {
+            "inn": "957505604",
+            "name": "\"Mifo‘ Tekstil\" MChJ",
+            "quantity": "55686",
+            "amount": "209309466475",
+            "deals": 191,
+            "brokers": {
+              "BK034": {
+                "deals": 191,
+                "quantity": "55686"
+              }
+            },
+            "distinct_sellers": 1,
+            "distinct_buyers": 165,
+            "share_pct": "22.358647383340426727910767772968545479366252037678"
+          },
+          {
+            "inn": "923113140",
+            "name": "\"Tusoya Fermer\" MChJ",
+            "quantity": "38332",
+            "amount": "133469852441",
+            "deals": 125,
+            "brokers": {
+              "BK047": {
+                "deals": 125,
+                "quantity": "38332"
+              }
+            },
+            "distinct_sellers": 1,
+            "distinct_buyers": 111,
+            "share_pct": "15.390792506163223024355772550972062732375591227746"
+          },
+          {
+            "inn": "902946936",
+            "name": "CHO‘HE KLASTER MCHJ",
+            "quantity": "24096",
+            "amount": "90099754211",
+            "deals": 69,
+            "brokers": {
+              "BK119": {
+                "deals": 69,
+                "quantity": "24096"
+              }
+            },
+            "distinct_sellers": 1,
+            "distinct_buyers": 60,
+            "share_pct": "9.6748548530864296669852002344835339559460045451260"
+          },
+          {
+            "inn": "911436796",
+            "name": "\"МИЯ АГРО\" ҚК",
+            "quantity": "19697",
+            "amount": "66877747990",
+            "deals": 65,
+            "brokers": {
+              "BK057": {
+                "deals": 65,
+                "quantity": "19697"
+              }
+            },
+            "distinct_sellers": 1,
+            "distinct_buyers": 62,
+            "share_pct": "7.9085996033052541978173758722867765741313268395314"
+          }
+        ]
+      }
+    },
+    {
+      "id": "sugar_q3_buyer_amount",
+      "year": 2025,
+      "from": "2025-07-01",
+      "to": "2025-09-30",
+      "tnved": "170199",
+      "exclude_cancelled": true,
+      "role": "buyer",
+      "rank": "amount",
+      "unit": "тонна",
+      "expected": {
+        "total_deals": 770,
+        "total_quantity": "28801",
+        "total_amount": "408933717686",
+        "top5": [
+          {
+            "inn": "908181397",
+            "name": "\"Qasi Invest\" MChJ",
+            "quantity": "908",
+            "amount": "12857708156",
+            "deals": 19,
+            "brokers": {
+              "BK044": {
+                "deals": 19,
+                "quantity": "908"
+              }
+            },
+            "distinct_sellers": 2,
+            "distinct_buyers": 1,
+            "share_pct": "3.1442034735499113103084156817727672044804309881017"
+          },
+          {
+            "inn": "968900028",
+            "name": "\"Lo‘xol Servis\" MChJ",
+            "quantity": "426",
+            "amount": "6196972729",
+            "deals": 12,
+            "brokers": {
+              "BK036": {
+                "deals": 12,
+                "quantity": "426"
+              }
+            },
+            "distinct_sellers": 2,
+            "distinct_buyers": 1,
+            "share_pct": "1.5153978410159734543557879584478710531583788615145"
+          },
+          {
+            "inn": "919892195",
+            "name": "SHO‘VAL TRADE MCHJ",
+            "quantity": "390",
+            "amount": "5593404915",
+            "deals": 7,
+            "brokers": {
+              "BK054": {
+                "deals": 5,
+                "quantity": "371"
+              },
+              "BK073": {
+                "deals": 2,
+                "quantity": "19"
+              }
+            },
+            "distinct_sellers": 2,
+            "distinct_buyers": 1,
+            "share_pct": "1.3678023291038327422504286649863257321464166471447"
+          },
+          {
+            "inn": "950274780",
+            "name": "\"ЯЛУ ИНВЕСТ\" ХК",
+            "quantity": "328",
+            "amount": "4598527110",
+            "deals": 6,
+            "brokers": {
+              "BK074": {
+                "deals": 3,
+                "quantity": "236"
+              },
+              "BK072": {
+                "deals": 3,
+                "quantity": "92"
+              }
+            },
+            "distinct_sellers": 2,
+            "distinct_buyers": 1,
+            "share_pct": "1.1245164952455649047435784693339560700418012632383"
+          },
+          {
+            "inn": "970556840",
+            "name": "\"РЎТИПОН ИМПЕКС\" МЧЖ",
+            "quantity": "287",
+            "amount": "4259391261",
+            "deals": 6,
+            "brokers": {
+              "BK037": {
+                "deals": 6,
+                "quantity": "287"
+              }
+            },
+            "distinct_sellers": 2,
+            "distinct_buyers": 1,
+            "share_pct": "1.0415847548845498062689676256249816857758944918639"
+          }
+        ]
+      }
+    },
+    {
+      "id": "diesel_q4_seller_volume",
+      "year": 2022,
+      "from": "2022-10-01",
+      "to": "2022-12-31",
+      "tnved": "271019",
+      "product_contains": "дизел",
+      "exclude_cancelled": true,
+      "role": "seller",
+      "rank": "quantity",
+      "unit": "литр",
+      "expected": {
+        "total_deals": 0,
+        "total_quantity": "0",
+        "total_amount": "0",
+        "top5": []
+      }
+    }
+  ]
+}
