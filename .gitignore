@@ -12,3 +12,4 @@ test-results/
 *.log
 *.pid
 *.tsbuildinfo
+data/questions_log.jsonl
