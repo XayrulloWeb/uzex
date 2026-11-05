@@ -45,7 +45,7 @@ class GeminiPool:
         self.budget = min(75.0, max(1.0, budget))
         self.cooldown: dict[tuple[int, str], float] = {}
         self.key_cooldown: dict[int, float] = {}
-        self._discovered_at = 0.0
+        self._discovered_at: float | None = None
         self._lock = threading.Lock()
         self._active = 0
 
@@ -54,7 +54,7 @@ class GeminiPool:
         return bool(self.keys or self.groq.configured)
 
     async def _discover(self, client, deadline):
-        if not self.discover or time.monotonic() - self._discovered_at < 900:
+        if not self.discover or (self._discovered_at is not None and time.monotonic() - self._discovered_at < 900):
             return
         self._discovered_at = time.monotonic()-840
         for index,key in enumerate(self.keys):

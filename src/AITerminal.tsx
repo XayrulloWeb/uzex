@@ -1,10 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { ArrowUpRight, ChevronDown, Download, Loader2, ShieldCheck, Sparkles } from 'lucide-react';
 import type { Lang, Scope } from './types';
 import { csvDownload, exact, integer } from './lib';
 
 type Cell = string | number | null;
 type AIResponse = {
+  title?: string;
+  metric?: string;
+  sections?: AIResponse[];
   status: 'answer' | 'no_data' | 'clarify' | 'unavailable';
   reason?: string;
   answer: string;
@@ -29,6 +32,7 @@ type AIResponse = {
     snapshot: string;
     date_field?: 'deal_date' | 'payment_date' | 'delivery_date';
     method?: string;
+    operations?: { title: string; sql: string; parameters: unknown[]; row_count: number }[];
   };
 };
 
@@ -252,76 +256,88 @@ export default function AITerminal({
               {periodLabel}: {answer.provenance.period.from} — {answer.provenance.period.to}
             </div>
           )}
-          {!!answer.rows.length && (
-            <>
-              <div className="ai-evidence-label">
-                {t('Подтверждающие данные', 'Tasdiqlovchi ma’lumotlar')}
-              </div>
-              <div className="table-scroll">
-                <table
-                  className={`report-table${answer.columns.length <= 2 ? ' ai-compact-table' : ''}`}
-                >
-                  <thead>
-                    <tr>
-                      {answer.columns.map((c) => (
-                        <th key={c.key}>
-                          {c.label}
-                          {c.unit ? `, ${c.unit}` : ''}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {answer.rows.map((row, i) => {
-                      const dealId = row.deal_id ? Number(row.deal_id) : null;
-                      return (
-                        <tr
-                          key={i}
-                          className={dealId ? 'ai-deal-row' : ''}
-                          onClick={() => {
-                            if (dealId) onDeal(dealId);
-                          }}
-                          style={dealId ? { cursor: 'pointer' } : undefined}
-                          title={dealId ? (lang === 'uz' ? `${dealId} bitimni ochish` : `Открыть сделку #${dealId}`) : undefined}
-                        >
-                          {answer.columns.map((c) => (
-                            <td key={c.key}>
-                              {c.key === 'deal_id' && row[c.key] ? (
-                                <button
-                                  className="deal-link"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    onDeal(Number(row[c.key]));
-                                  }}
-                                >
-                                  #{String(row[c.key])}
-                                </button>
-                              ) : (
-                                formatCell(row[c.key], c.kind)
-                              )}
-                            </td>
-                          ))}
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-              <button
-                className="ai-export"
-                onClick={() =>
-                  csvDownload(
-                    'uzex-ai-result.csv',
-                    answer.columns.map((c) => c.label + (c.unit ? `, ${c.unit}` : '')),
-                    answer.rows.map((r) => answer.columns.map((c) => r[c.key])),
-                  )
-                }
+          {(answer.sections?.length ? answer.sections : [answer])
+            .filter((section) => section.rows.length > 0)
+            .map((section, sectionIndex) => (
+              <div
+                className="ai-evidence-section"
+                data-operation={section.metric}
+                key={sectionIndex}
               >
-                <Download size={14} />
-                {t('Выгрузить результат', 'Natijani yuklash')} CSV
-              </button>
-            </>
-          )}
+                <div className="ai-evidence-label">
+                  {section.title || t('Подтверждающие данные', 'Tasdiqlovchi ma’lumotlar')}
+                </div>
+                <div className="table-scroll">
+                  <table
+                    className={`report-table${section.columns.length <= 2 ? ' ai-compact-table' : ''}`}
+                  >
+                    <thead>
+                      <tr>
+                        {section.columns.map((c) => (
+                          <th key={c.key}>
+                            {c.label}
+                            {c.unit ? `, ${c.unit}` : ''}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {section.rows.map((row, i) => {
+                        const dealId = row.deal_id ? Number(row.deal_id) : null;
+                        return (
+                          <tr
+                            key={i}
+                            className={dealId ? 'ai-deal-row' : ''}
+                            onClick={() => {
+                              if (dealId) onDeal(dealId);
+                            }}
+                            style={dealId ? { cursor: 'pointer' } : undefined}
+                            title={
+                              dealId
+                                ? lang === 'uz'
+                                  ? `${dealId} bitimni ochish`
+                                  : `Открыть сделку #${dealId}`
+                                : undefined
+                            }
+                          >
+                            {section.columns.map((c) => (
+                              <td key={c.key}>
+                                {c.key === 'deal_id' && row[c.key] ? (
+                                  <button
+                                    className="deal-link"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onDeal(Number(row[c.key]));
+                                    }}
+                                  >
+                                    #{String(row[c.key])}
+                                  </button>
+                                ) : (
+                                  formatCell(row[c.key], c.kind)
+                                )}
+                              </td>
+                            ))}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <button
+                  className="ai-export"
+                  onClick={() =>
+                    csvDownload(
+                      section.metric ? `uzex-ai-${section.metric}.csv` : 'uzex-ai-result.csv',
+                      section.columns.map((c) => c.label + (c.unit ? `, ${c.unit}` : '')),
+                      section.rows.map((r) => section.columns.map((c) => r[c.key])),
+                    )
+                  }
+                >
+                  <Download size={14} />
+                  {t('Выгрузить результат', 'Natijani yuklash')} CSV
+                </button>
+              </div>
+            ))}
           {answer.provenance && (
             <>
               <button
@@ -348,8 +364,15 @@ export default function AITerminal({
                       {periodLabel}: {answer.provenance.period.from} — {answer.provenance.period.to}
                     </p>
                   )}
-                  <pre>{answer.provenance.sql}</pre>
-                  <p className="mono">{JSON.stringify(answer.provenance.parameters)}</p>
+                  {(answer.provenance.operations || [{ title: '', ...answer.provenance }]).map(
+                    (operation, index) => (
+                      <Fragment key={index}>
+                        {operation.title && <p>{operation.title}</p>}
+                        <pre>{operation.sql}</pre>
+                        <p className="mono">{JSON.stringify(operation.parameters)}</p>
+                      </Fragment>
+                    ),
+                  )}
                   {answer.provenance.method && <p>{answer.provenance.method}</p>}
                   {answer.provider && (
                     <p>

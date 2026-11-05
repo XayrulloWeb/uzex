@@ -11,6 +11,7 @@ from server.ai_analytics import constrain_request, execute_plan, outcome
 from server.gemini import ModelUnavailable, get_pool
 from server.question_checks import QuestionMismatch
 from server.monthly import local_monthly_plan
+from server.compound import local_compound_plan, requested_metrics, shared_scope
 
 router=APIRouter(prefix='/api/ai',tags=['AI analyst'])
 
@@ -34,13 +35,17 @@ async def ask(request: AIQuestion):
         response=outcome(absent,request.lang)
         response['elapsed_ms']=round((time.monotonic()-started)*1000)
         return response
+    if len(requested_metrics(request.question))>1 and not shared_scope(request):
+        response=outcome('compound_scope',request.lang,'clarify')
+        response['elapsed_ms']=round((time.monotonic()-started)*1000)
+        return response
     try:
         async with asyncio.timeout(80):
-            trusted=local_monthly_plan(request) or local_ratio_plan(request)
+            trusted=local_compound_plan(request) or local_monthly_plan(request) or local_ratio_plan(request)
             if trusted:
                 plan=constrain_request(request,trusted)
                 response=await asyncio.to_thread(execute_plan,plan,request)
-                response['provider']={'kind':'local','model':'verified-monthly-report' if plan.month_comparison else 'verified-ratio' if plan.metric=='share' else 'verified-comparison','attempts':0,'used_backup':False}
+                response['provider']={'kind':'local','model':'verified-compound' if plan.additional_metrics else 'verified-monthly-report' if plan.month_comparison else 'verified-ratio' if plan.metric=='share' else 'verified-comparison','attempts':0,'used_backup':False}
                 response['elapsed_ms']=round((time.monotonic()-started)*1000)
                 return response
             def validate(text):

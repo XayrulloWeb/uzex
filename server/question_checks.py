@@ -152,6 +152,8 @@ def validate_question(request, plan):
         if actual!=expected: raise QuestionMismatch(field)
 
     q = question_text(request.question)
+    from server.compound import validate_operations
+    validate_operations(request,plan)
     from server.monthly import month_requirements, rate_requested
     monthly = month_requirements(request)
     if monthly is not None and plan.metric in ['amount','count']:
@@ -304,18 +306,21 @@ def validate_question(request, plan):
     if actual_delivery: require('delivered_only',True)
     elif plan.delivered_only and not re.search(r'постав|yetkaz',evidence): raise QuestionMismatch('unexpected_delivered_only')
 
-    temporal = chronological_metric(q)
+    temporal = chronological_metric(q) if not plan.additional_metrics else None
     weighted = bool(re.search(r'средневзвеш|o\'rtacha\s+tortilgan',q))
     price = bool(re.search(r'\bцен\w*|\bnarx\w*',q))
     amount = bool(re.search(r'\bсумм\w*|\bоборот\w*|\bsumma\w*|\baylanma\w*',q))
     volume = bool(re.search(r'\bобъем\w*|\bhajm\w*|сколько(?:\s+(?:всего|было))?\s+(?:тонн|килограмм|литр|штук|метр)|qancha\s+(?:tonna|kilogram|litr|dona)',q))
     counting = bool(re.search(r'сколько(?:\s+\w+){0,3}\s+сдел|в\s+скольких.*?сделк|число\s+сдел|количество\s+сдел|nechta(?:\s+noyob)?\s+bitim|bitimlar\s+soni',q))
     late = bool(re.search(r'с\s+опозданием|позже\s+срока|kech\s+yetkaz',q))
+    if plan.additional_metrics and (volume or price or weighted or late or share_intent(q)):
+        raise QuestionMismatch('additional_compound_measure_not_supported')
     if plan.month_comparison and (volume or price or weighted or late):
         raise QuestionMismatch('additional_monthly_measure_not_supported')
     if plan.metric=='share' and (volume or late): raise QuestionMismatch('unsupported_share_basis_or_filter')
     if late and (amount or volume or price): raise QuestionMismatch('late_calculation_not_supported')
-    if share_intent(q): require('metric','share')
+    if plan.additional_metrics: pass  # Every operation was checked above; common filters still apply.
+    elif share_intent(q): require('metric','share')
     elif temporal: require('metric',temporal)
     elif weighted: require('metric','weighted_price')
     elif price and re.search(r'максималь|сам\w*\s+высок|eng\s+yuqori',q): require('metric','max_price')

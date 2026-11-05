@@ -52,6 +52,7 @@ class QueryPlan(BaseModel):
     model_config = ConfigDict(extra='forbid')
     action: Literal['query', 'clarify', 'unsupported'] = 'query'
     metric: Literal['count', 'amount', 'volume', 'weighted_price', 'min_price', 'max_price', 'min_amount', 'max_amount', 'first_deal', 'last_deal', 'share', 'late_delivery', 'records', 'detail', 'rate', 'participant', 'broker', 'contract'] = 'count'
+    additional_metrics: list[Literal['count','amount','first_deal','last_deal']] = Field(default_factory=list,max_length=3)
     share_target: ShareTarget | None = None
     share_basis: Literal['amount','count','both'] = 'both'
     comparison: bool = False
@@ -87,6 +88,12 @@ class QueryPlan(BaseModel):
 
     @model_validator(mode='after')
     def validate_catalog(self):
+        if self.additional_metrics:
+            metrics=[self.metric]+self.additional_metrics
+            if self.metric not in ['count','amount','first_deal','last_deal'] or len(set(metrics))!=len(metrics):
+                raise ValueError('Compound metrics must be distinct supported operations')
+            if self.group!='none' or self.comparison or self.month_comparison:
+                raise ValueError('Compound operations require a common ungrouped scope')
         if self.month_comparison and (self.metric not in ['amount','count'] or self.group != 'month' or not self.comparison):
             raise ValueError('Monthly comparison requires amount/count grouped by month')
         if self.metric=='share' and self.share_target is None:
@@ -129,7 +136,7 @@ def preflight(request: AIQuestion):
     return None
 
 
-def chronological_metric(text: str):
+def chronological_metrics(text: str):
     """Recognize temporal superlatives without confusing grades or rankings."""
     q = normalize(text)
     event = r'(?:экспорт\w*|сделк\w*|оплат\w*|поставк\w*|eksport\w*|bitim\w*|to\'lov\w*|yetkazib\s+berish\w*)'
@@ -140,12 +147,17 @@ def chronological_metric(text: str):
     latest = bool(re.search(r'\b'+last+r'\s+'+modifiers+event, q))
     earliest |= bool(re.search(r'начал\w*\s+экспорт|экспорт\w*\s+начал|впервые.*?экспорт|с\s+какой\s+даты.*?экспорт|eksport.*?boshlan',q))
     latest |= bool(re.search(r'последний\s+раз.*?экспорт|экспорт.*?последний\s+раз|eksport.*?oxirgi\s+marta',q))
-    if (earliest and latest) or re.search(r'(?:перв\w*|birinchi|ilk)\s+(?:и|va)\s+(?:последн\w*|oxirgi|so\'nggi)\s+'+modifiers+event,q):
+    if re.search(r'(?:перв\w*|birinchi|ilk)\s+(?:и|va)\s+(?:последн\w*|oxirgi|so\'nggi)\s+'+modifiers+event,q):
+        earliest=latest=True
+    return (['first_deal'] if earliest else [])+(['last_deal'] if latest else [])
+
+
+def chronological_metric(text: str):
+    metrics=chronological_metrics(text)
+    if len(metrics)>1:
         from server.question_checks import QuestionMismatch
         raise QuestionMismatch('multiple_chronological_operations')
-    if earliest != latest:
-        return 'first_deal' if earliest else 'last_deal'
-    return None
+    return metrics[0] if metrics else None
 
 
 def local_chronology_plan(request: AIQuestion):
@@ -244,6 +256,7 @@ Honour all user constraints. Explicit dates/years override UI scope; otherwise u
 Every explicit condition is checked independently before execution. Preserve export/domestic type, companies, entity types, statuses, commodity, region, unit, grade/class, currency, ordering and top-N. Do not add filters absent from the question or UI. Company names in quotation marks are literal identifiers, not product names or years. Company/broker role is any unless the user specifies buyer or seller. A unique deal number overrides implicit UI filters; retain any explicitly requested conditions. A number labelled contract/shartnoma is not a deal number. For named months use the full month boundaries; for a particular trade day set equal date_from and date_to. Payment/delivery year questions use their event date, not trade date. "Ma’lumotlar to‘plamida" without a named year refers to all provided years. An explicit named year always takes precedence over generic all-period wording. Numeric amount/volume thresholds, simultaneous product/company comparisons, participant registration-region aggregation and late-delivery monetary totals are not representable by this schema: choose clarify instead of dropping these conditions.
 Shares/percentages ARE supported. Use metric=share, share_target={dimension:contract_type,value:Экспортный} for export share. Other share dimensions are commodity, region (seller warehouse), and status with a valid vocabulary value. share_target describes the numerator; DO NOT also filter the denominator to that same target. Other filters apply to both. share_basis is amount, count, or both; if unspecified show both rather than ask a generic clarification. Monetary shares use UZS converted at each trade date. For two or more named years use group=year and comparison=true; years contains only explicitly requested years. Share differences show percentage points AND relative percent change, with a zero-baseline check. For ordinary amount/count/volume growth use the existing metric, group=year, comparison=true. Never replace export amount growth with export market share. 2026 data end on October30; all comparisons must state this partial coverage. Numeric percentages and comparisons are computed by the server, never supplied as factual model text.
 Monthly amount/count comparisons are supported with group=month, comparison=true and month_comparison={baseline:YYYY-MM-01,target:YYYY-MM-01,include_usd_rate:boolean}. Baseline is the month after "относительно", "по сравнению с", or before Uzbek "nisbatan"; target is the month being evaluated, even when it is chronologically earlier. Use the two full month boundaries for date_from/date_to; only those two months are aggregated. If the same question ALSO requests the dollar exchange rate, include_usd_rate MUST be true. The server reports target-month daily mean/min/max from usd_rates, and computes the trade change independently with exact conversion at each deal date. Do not replace a rate+export comparison with either operation alone. For example, June 2026 exports relative to May uses baseline=2026-05-01,target=2026-06-01. No profit or causal claim can be inferred from these aggregates.
+Several operations over the SAME filtered trade set are supported: choose one metric and put the other requested metrics into additional_metrics. Allowed compound operations: count, amount, first_deal, last_deal. For "2022-yilda jami bitimlar soni va birinchi bitim tafsilotlari?" use metric=count,additional_metrics=[first_deal],year=2022. The server executes every operation and shows separate evidence tables/SQL. First/last details refer to the actual trade selected by date and time, not an invented ID. Keep a common period, commodity, region, status and currency; group must be none. Different explicitly scoped subsets/years cannot be represented by a common scope: clarify rather than merging them. Do not drop a requested operation or add an unrequested one. An amount requested specifically for the first trade belongs to that trade's details, not a separate total.
 '''+ '\nVOCABULARY: '+json.dumps(vocabulary, ensure_ascii=False)+'\nSCHEMA: '+json.dumps(QueryPlan.model_json_schema(), ensure_ascii=False)
 
 

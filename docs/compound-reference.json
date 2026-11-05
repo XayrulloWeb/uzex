@@ -1,0 +1,345 @@
+{
+  "method": "Independent direct CSV scan, Decimal precision50; no production parsers, analytics compiler or SQL. Count original rows; min/max parsed date+time; USD converted at the rate of each original deal date.",
+  "years": {
+    "2022": {
+      "all": {
+        "count": 84299,
+        "amount_uzs": "29934581605629.8641",
+        "first": {
+          "deal_id": 100001,
+          "timestamp": "2022-01-03T10:04:49",
+          "product": "Шрот хлопковых семян Сорт первый сорт Тип тостированный",
+          "quantity": "79720",
+          "unit": "килограмм",
+          "amount_uzs": "304547938.4",
+          "status": "Исполнен"
+        },
+        "last": {
+          "deal_id": 185157,
+          "timestamp": "2022-12-30T16:59:39",
+          "product": "Шрот хлопковых семян Сорт первый сорт Тип тостированный",
+          "quantity": "199945",
+          "unit": "килограмм",
+          "amount_uzs": "949772740.65",
+          "status": "Исполнен"
+        }
+      },
+      "without_cancelled": {
+        "count": 78567,
+        "amount_uzs": "27965891730951.9920",
+        "first": {
+          "deal_id": 100001,
+          "timestamp": "2022-01-03T10:04:49",
+          "product": "Шрот хлопковых семян Сорт первый сорт Тип тостированный",
+          "quantity": "79720",
+          "unit": "килограмм",
+          "amount_uzs": "304547938.4",
+          "status": "Исполнен"
+        },
+        "last": {
+          "deal_id": 185157,
+          "timestamp": "2022-12-30T16:59:39",
+          "product": "Шрот хлопковых семян Сорт первый сорт Тип тостированный",
+          "quantity": "199945",
+          "unit": "килограмм",
+          "amount_uzs": "949772740.65",
+          "status": "Исполнен"
+        }
+      },
+      "export": {
+        "count": 1317,
+        "amount_uzs": "2616857578493.4841",
+        "first": {
+          "deal_id": 100024,
+          "timestamp": "2022-01-03T11:31:50",
+          "product": "Пряжа хлопковая Марка Ne 20/1",
+          "quantity": "13",
+          "unit": "тонна",
+          "amount_uzs": "467992896.2592",
+          "status": "Исполнен"
+        },
+        "last": {
+          "deal_id": 185109,
+          "timestamp": "2022-12-30T16:13:59",
+          "product": "Пряжа хлопковая Марка Ne 20/1",
+          "quantity": "22",
+          "unit": "тонна",
+          "amount_uzs": "869406234.2504",
+          "status": "Исполнен"
+        }
+      }
+    },
+    "2023": {
+      "all": {
+        "count": 93985,
+        "amount_uzs": "36616596290597.6046",
+        "first": {
+          "deal_id": 185158,
+          "timestamp": "2023-01-02T10:00:06",
+          "product": "Сода каустическая Тип твердая",
+          "quantity": "19",
+          "unit": "тонна",
+          "amount_uzs": "131895492",
+          "status": "Исполнен"
+        },
+        "last": {
+          "deal_id": 280090,
+          "timestamp": "2023-12-29T16:56:10",
+          "product": "Хлопок-сырец (спот) Сорт 2 сорт Класс II класс",
+          "quantity": "148257",
+          "unit": "килограмм",
+          "amount_uzs": "944070924.6",
+          "status": "Исполнен"
+        }
+      },
+      "without_cancelled": {
+        "count": 87672,
+        "amount_uzs": "34187428452052.3830",
+        "first": {
+          "deal_id": 185158,
+          "timestamp": "2023-01-02T10:00:06",
+          "product": "Сода каустическая Тип твердая",
+          "quantity": "19",
+          "unit": "тонна",
+          "amount_uzs": "131895492",
+          "status": "Исполнен"
+        },
+        "last": {
+          "deal_id": 280090,
+          "timestamp": "2023-12-29T16:56:10",
+          "product": "Хлопок-сырец (спот) Сорт 2 сорт Класс II класс",
+          "quantity": "148257",
+          "unit": "килограмм",
+          "amount_uzs": "944070924.6",
+          "status": "Исполнен"
+        }
+      },
+      "export": {
+        "count": 1209,
+        "amount_uzs": "2355403469165.2346",
+        "first": {
+          "deal_id": 185164,
+          "timestamp": "2023-01-02T10:11:45",
+          "product": "Пряжа хлопковая Марка Ne 20/1",
+          "quantity": "16",
+          "unit": "тонна",
+          "amount_uzs": "676353260.5056",
+          "status": "Исполнен"
+        },
+        "last": {
+          "deal_id": 280052,
+          "timestamp": "2023-12-29T16:13:26",
+          "product": "ПРЯЖА ХЛОПЧАТОБУМАЖНАЯ МАРКА NE 24/1",
+          "quantity": "14",
+          "unit": "тонна",
+          "amount_uzs": "617000167.7154",
+          "status": "Исполнен"
+        }
+      }
+    },
+    "2024": {
+      "all": {
+        "count": 106647,
+        "amount_uzs": "45900904000492.2058",
+        "first": {
+          "deal_id": 280091,
+          "timestamp": "2024-01-02T10:02:13",
+          "product": "Катод медный М0к",
+          "quantity": "17",
+          "unit": "тонна",
+          "amount_uzs": "2161308558.0712",
+          "status": "Исполнен"
+        },
+        "last": {
+          "deal_id": 387829,
+          "timestamp": "2024-12-31T16:59:11",
+          "product": "Пшеница продовольственная Класс 4-класс",
+          "quantity": "176",
+          "unit": "тонна",
+          "amount_uzs": "714936640",
+          "status": "Исполнен"
+        }
+      },
+      "without_cancelled": {
+        "count": 99324,
+        "amount_uzs": "42724135079483.6614",
+        "first": {
+          "deal_id": 280091,
+          "timestamp": "2024-01-02T10:02:13",
+          "product": "Катод медный М0к",
+          "quantity": "17",
+          "unit": "тонна",
+          "amount_uzs": "2161308558.0712",
+          "status": "Исполнен"
+        },
+        "last": {
+          "deal_id": 387829,
+          "timestamp": "2024-12-31T16:59:11",
+          "product": "Пшеница продовольственная Класс 4-класс",
+          "quantity": "176",
+          "unit": "тонна",
+          "amount_uzs": "714936640",
+          "status": "Исполнен"
+        }
+      },
+      "export": {
+        "count": 1327,
+        "amount_uzs": "2621400340149.8958",
+        "first": {
+          "deal_id": 280091,
+          "timestamp": "2024-01-02T10:02:13",
+          "product": "Катод медный М0к",
+          "quantity": "17",
+          "unit": "тонна",
+          "amount_uzs": "2161308558.0712",
+          "status": "Исполнен"
+        },
+        "last": {
+          "deal_id": 387738,
+          "timestamp": "2024-12-31T15:25:04",
+          "product": "КАТОД МЕДНЫЙ МАРКА М0К",
+          "quantity": "37",
+          "unit": "тонна",
+          "amount_uzs": "4525123590.4896",
+          "status": "Исполнен"
+        }
+      }
+    },
+    "2025": {
+      "all": {
+        "count": 115763,
+        "amount_uzs": "55976577480267.0551",
+        "first": {
+          "deal_id": 387830,
+          "timestamp": "2025-01-02T10:00:13",
+          "product": "Кормосмесь Марка КС-65",
+          "quantity": "25",
+          "unit": "тонна",
+          "amount_uzs": "85256750",
+          "status": "Исполнен"
+        },
+        "last": {
+          "deal_id": 504706,
+          "timestamp": "2025-12-31T16:58:27",
+          "product": "Хлопок-сырец (спот) 3-сорта 2-класс",
+          "quantity": "126423",
+          "unit": "килограмм",
+          "amount_uzs": "1072131515.73",
+          "status": "Исполнен"
+        }
+      },
+      "without_cancelled": {
+        "count": 107678,
+        "amount_uzs": "52060836360057.1205",
+        "first": {
+          "deal_id": 387830,
+          "timestamp": "2025-01-02T10:00:13",
+          "product": "Кормосмесь Марка КС-65",
+          "quantity": "25",
+          "unit": "тонна",
+          "amount_uzs": "85256750",
+          "status": "Исполнен"
+        },
+        "last": {
+          "deal_id": 504706,
+          "timestamp": "2025-12-31T16:58:27",
+          "product": "Хлопок-сырец (спот) 3-сорта 2-класс",
+          "quantity": "126423",
+          "unit": "килограмм",
+          "amount_uzs": "1072131515.73",
+          "status": "Исполнен"
+        }
+      },
+      "export": {
+        "count": 1367,
+        "amount_uzs": "2740766106533.9551",
+        "first": {
+          "deal_id": 387917,
+          "timestamp": "2025-01-02T11:23:37",
+          "product": "КАТОД МЕДНЫЙ МАРКА М0К",
+          "quantity": "23",
+          "unit": "тонна",
+          "amount_uzs": "2937129088.8544",
+          "status": "Исполнен"
+        },
+        "last": {
+          "deal_id": 504616,
+          "timestamp": "2025-12-31T15:33:08",
+          "product": "ПРЯЖА ХЛОПЧАТОБУМАЖНАЯ МАРКА NE 20/1",
+          "quantity": "6",
+          "unit": "тонна",
+          "amount_uzs": "275826376.0944",
+          "status": "Исполнен"
+        }
+      }
+    },
+    "2026": {
+      "all": {
+        "count": 99306,
+        "amount_uzs": "52048498177445.0571",
+        "first": {
+          "deal_id": 504707,
+          "timestamp": "2026-01-02T10:00:08",
+          "product": "Лист стальной горячекатаный Марка Ст3сп Размер 3х1250х2500мм",
+          "quantity": "4672",
+          "unit": "килограмм",
+          "amount_uzs": "78356027.52",
+          "status": "Исполнен"
+        },
+        "last": {
+          "deal_id": 604956,
+          "timestamp": "2026-10-30T16:59:54",
+          "product": "Хлопок-сырец (спот) Сорт I сорт Класс II класс",
+          "quantity": "9414",
+          "unit": "килограмм",
+          "amount_uzs": "97848174.6",
+          "status": "Новый"
+        }
+      },
+      "without_cancelled": {
+        "count": 93040,
+        "amount_uzs": "48800447257149.0249",
+        "first": {
+          "deal_id": 504707,
+          "timestamp": "2026-01-02T10:00:08",
+          "product": "Лист стальной горячекатаный Марка Ст3сп Размер 3х1250х2500мм",
+          "quantity": "4672",
+          "unit": "килограмм",
+          "amount_uzs": "78356027.52",
+          "status": "Исполнен"
+        },
+        "last": {
+          "deal_id": 604956,
+          "timestamp": "2026-10-30T16:59:54",
+          "product": "Хлопок-сырец (спот) Сорт I сорт Класс II класс",
+          "quantity": "9414",
+          "unit": "килограмм",
+          "amount_uzs": "97848174.6",
+          "status": "Новый"
+        }
+      },
+      "export": {
+        "count": 1370,
+        "amount_uzs": "3307510073846.2471",
+        "first": {
+          "deal_id": 504726,
+          "timestamp": "2026-01-02T10:36:05",
+          "product": "КАТОД МЕДНЫЙ МАРКА М0К",
+          "quantity": "8",
+          "unit": "тонна",
+          "amount_uzs": "1031932977.62",
+          "status": "Исполнен"
+        },
+        "last": {
+          "deal_id": 604875,
+          "timestamp": "2026-10-30T16:22:39",
+          "product": "ПРЯЖА ХЛОПЧАТОБУМАЖНАЯ МАРКА NE 20/1",
+          "quantity": "20",
+          "unit": "тонна",
+          "amount_uzs": "1069001679.32",
+          "status": "Новый"
+        }
+      }
+    }
+  }
+}

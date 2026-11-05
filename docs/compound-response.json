@@ -1,0 +1,366 @@
+{
+  "status": "answer",
+  "answer": "Tanlangan shartlar bo‘yicha 84 299 ta bitim.\n2022-yilda birinchi bitim — 03.01.2022, soat 10:04:49; bitim №100001.",
+  "columns": [],
+  "rows": [],
+  "interpretation": [
+    "Bitimlar soni",
+    "2022-yilda",
+    "Barcha holatlar",
+    "Birinchi bitim"
+  ],
+  "provenance": {
+    "sql": "SELECT * FROM (SELECT count(*) AS deals FROM (SELECT * FROM trades WHERE TRUE AND year(deal_date)=?) AS filtered) AS aggregates ORDER BY deals DESC LIMIT ?",
+    "parameters": [
+      2022,
+      10
+    ],
+    "row_count": 84299,
+    "snapshot": "2026-10-30",
+    "sources": [
+      "deals_2022…2026.csv",
+      "contracts.csv",
+      "participants.csv",
+      "brokers.csv",
+      "usd_rates.csv"
+    ],
+    "period": {
+      "from": "2022-01-03",
+      "to": "2022-12-30"
+    },
+    "date_field": "deal_date",
+    "currency": "UZS",
+    "include_cancelled": true,
+    "statuses": [],
+    "method": "USD × rate on deal date; quantity = lots × lot size; weighted price = sum(amount) / sum(quantity)",
+    "operations": [
+      {
+        "title": "Bitimlar soni",
+        "sql": "SELECT * FROM (SELECT count(*) AS deals FROM (SELECT * FROM trades WHERE TRUE AND year(deal_date)=?) AS filtered) AS aggregates ORDER BY deals DESC LIMIT ?",
+        "parameters": [
+          2022,
+          10
+        ],
+        "row_count": 84299,
+        "snapshot": "2026-10-30",
+        "sources": [
+          "deals_2022…2026.csv",
+          "contracts.csv",
+          "participants.csv",
+          "brokers.csv",
+          "usd_rates.csv"
+        ],
+        "period": {
+          "from": "2022-01-03",
+          "to": "2022-12-30"
+        },
+        "date_field": "deal_date",
+        "currency": "UZS",
+        "include_cancelled": true,
+        "statuses": [],
+        "method": "USD × rate on deal date; quantity = lots × lot size; weighted price = sum(amount) / sum(quantity)"
+      },
+      {
+        "title": "Birinchi bitim",
+        "sql": "SELECT deal_id,deal_date,deal_time,product_label,(quantity) AS quantity,(unit) AS unit,\n        amount_uzs AS amount,status,seller_name,buyer_name FROM trades WHERE TRUE AND year(deal_date)=? AND deal_date IS NOT NULL\n        ORDER BY deal_date ASC,deal_time ASC,deal_id ASC LIMIT ?",
+        "parameters": [
+          2022,
+          1
+        ],
+        "row_count": 84299,
+        "snapshot": "2026-10-30",
+        "sources": [
+          "deals_2022…2026.csv",
+          "contracts.csv",
+          "participants.csv",
+          "brokers.csv",
+          "usd_rates.csv"
+        ],
+        "period": {
+          "from": "2022-01-03",
+          "to": "2022-12-30"
+        },
+        "date_field": "deal_date",
+        "currency": "UZS",
+        "include_cancelled": true,
+        "statuses": [],
+        "method": "USD × rate on deal date; quantity = lots × lot size; weighted price = sum(amount) / sum(quantity)"
+      }
+    ]
+  },
+  "plan": {
+    "action": "query",
+    "metric": "count",
+    "additional_metrics": [
+      "first_deal"
+    ],
+    "share_target": null,
+    "share_basis": "both",
+    "comparison": false,
+    "month_comparison": null,
+    "years": [],
+    "group": "none",
+    "year": 2022,
+    "date_from": null,
+    "date_to": null,
+    "date_field": "deal_date",
+    "commodity": null,
+    "region": null,
+    "statuses": [],
+    "include_cancelled": true,
+    "contract_type": null,
+    "form": null,
+    "deal_id": null,
+    "contract_id": null,
+    "participant_inn": null,
+    "company_name": null,
+    "role": "any",
+    "broker_code": null,
+    "grade": null,
+    "brand": null,
+    "quality_class": null,
+    "product_text": null,
+    "report_currency": "UZS",
+    "physical_unit": null,
+    "delivered_only": false,
+    "limit": 10,
+    "order": "desc",
+    "reason": "unknown"
+  },
+  "title": "Bitimlar soni",
+  "metric": "count",
+  "sections": [
+    {
+      "status": "answer",
+      "answer": "Tanlangan shartlar bo‘yicha 84 299 ta bitim.",
+      "columns": [
+        {
+          "key": "deals",
+          "label": "Bitimlar",
+          "kind": "integer"
+        }
+      ],
+      "rows": [
+        {
+          "deals": 84299
+        }
+      ],
+      "interpretation": [
+        "Bitimlar soni",
+        "2022-yilda",
+        "Barcha holatlar"
+      ],
+      "provenance": {
+        "sql": "SELECT * FROM (SELECT count(*) AS deals FROM (SELECT * FROM trades WHERE TRUE AND year(deal_date)=?) AS filtered) AS aggregates ORDER BY deals DESC LIMIT ?",
+        "parameters": [
+          2022,
+          10
+        ],
+        "row_count": 84299,
+        "snapshot": "2026-10-30",
+        "sources": [
+          "deals_2022…2026.csv",
+          "contracts.csv",
+          "participants.csv",
+          "brokers.csv",
+          "usd_rates.csv"
+        ],
+        "period": {
+          "from": "2022-01-03",
+          "to": "2022-12-30"
+        },
+        "date_field": "deal_date",
+        "currency": "UZS",
+        "include_cancelled": true,
+        "statuses": [],
+        "method": "USD × rate on deal date; quantity = lots × lot size; weighted price = sum(amount) / sum(quantity)"
+      },
+      "plan": {
+        "action": "query",
+        "metric": "count",
+        "additional_metrics": [],
+        "share_target": null,
+        "share_basis": "both",
+        "comparison": false,
+        "month_comparison": null,
+        "years": [],
+        "group": "none",
+        "year": 2022,
+        "date_from": null,
+        "date_to": null,
+        "date_field": "deal_date",
+        "commodity": null,
+        "region": null,
+        "statuses": [],
+        "include_cancelled": true,
+        "contract_type": null,
+        "form": null,
+        "deal_id": null,
+        "contract_id": null,
+        "participant_inn": null,
+        "company_name": null,
+        "role": "any",
+        "broker_code": null,
+        "grade": null,
+        "brand": null,
+        "quality_class": null,
+        "product_text": null,
+        "report_currency": "UZS",
+        "physical_unit": null,
+        "delivered_only": false,
+        "limit": 10,
+        "order": "desc",
+        "reason": "unknown"
+      },
+      "title": "Bitimlar soni",
+      "metric": "count"
+    },
+    {
+      "status": "answer",
+      "answer": "2022-yilda birinchi bitim — 03.01.2022, soat 10:04:49; bitim №100001.",
+      "columns": [
+        {
+          "key": "deal_id",
+          "label": "Bitim",
+          "kind": "integer"
+        },
+        {
+          "key": "deal_date",
+          "label": "Sana",
+          "kind": "text"
+        },
+        {
+          "key": "deal_time",
+          "label": "Bitim vaqti",
+          "kind": "text"
+        },
+        {
+          "key": "product_label",
+          "label": "Tovar",
+          "kind": "text"
+        },
+        {
+          "key": "quantity",
+          "label": "Hajm",
+          "kind": "decimal"
+        },
+        {
+          "key": "unit",
+          "label": "Birlik",
+          "kind": "text"
+        },
+        {
+          "key": "amount",
+          "label": "Summa",
+          "kind": "decimal",
+          "unit": "UZS"
+        },
+        {
+          "key": "status",
+          "label": "Holat",
+          "kind": "text"
+        },
+        {
+          "key": "seller_name",
+          "label": "Sotuvchi",
+          "kind": "text"
+        },
+        {
+          "key": "buyer_name",
+          "label": "Xaridor",
+          "kind": "text"
+        }
+      ],
+      "rows": [
+        {
+          "deal_id": 100001,
+          "deal_date": "2022-01-03",
+          "deal_time": "10:04:49",
+          "product_label": "Шрот хлопковых семян Сорт первый сорт Тип тостированный",
+          "quantity": "79720.0000",
+          "unit": "килограмм",
+          "amount": "304547938.40000000",
+          "status": "Исполнен",
+          "seller_name": "RUKUSHO‘ FERMER MCHJ",
+          "buyer_name": "\"Bo‘juk Servis\" MChJ"
+        }
+      ],
+      "interpretation": [
+        "Birinchi bitim",
+        "2022-yilda",
+        "Barcha holatlar"
+      ],
+      "provenance": {
+        "sql": "SELECT deal_id,deal_date,deal_time,product_label,(quantity) AS quantity,(unit) AS unit,\n        amount_uzs AS amount,status,seller_name,buyer_name FROM trades WHERE TRUE AND year(deal_date)=? AND deal_date IS NOT NULL\n        ORDER BY deal_date ASC,deal_time ASC,deal_id ASC LIMIT ?",
+        "parameters": [
+          2022,
+          1
+        ],
+        "row_count": 84299,
+        "snapshot": "2026-10-30",
+        "sources": [
+          "deals_2022…2026.csv",
+          "contracts.csv",
+          "participants.csv",
+          "brokers.csv",
+          "usd_rates.csv"
+        ],
+        "period": {
+          "from": "2022-01-03",
+          "to": "2022-12-30"
+        },
+        "date_field": "deal_date",
+        "currency": "UZS",
+        "include_cancelled": true,
+        "statuses": [],
+        "method": "USD × rate on deal date; quantity = lots × lot size; weighted price = sum(amount) / sum(quantity)"
+      },
+      "plan": {
+        "action": "query",
+        "metric": "first_deal",
+        "additional_metrics": [],
+        "share_target": null,
+        "share_basis": "both",
+        "comparison": false,
+        "month_comparison": null,
+        "years": [],
+        "group": "none",
+        "year": 2022,
+        "date_from": null,
+        "date_to": null,
+        "date_field": "deal_date",
+        "commodity": null,
+        "region": null,
+        "statuses": [],
+        "include_cancelled": true,
+        "contract_type": null,
+        "form": null,
+        "deal_id": null,
+        "contract_id": null,
+        "participant_inn": null,
+        "company_name": null,
+        "role": "any",
+        "broker_code": null,
+        "grade": null,
+        "brand": null,
+        "quality_class": null,
+        "product_text": null,
+        "report_currency": "UZS",
+        "physical_unit": null,
+        "delivered_only": false,
+        "limit": 1,
+        "order": "asc",
+        "reason": "unknown"
+      },
+      "title": "Birinchi bitim",
+      "metric": "first_deal"
+    }
+  ],
+  "provider": {
+    "kind": "local",
+    "model": "verified-compound",
+    "attempts": 0,
+    "used_backup": false
+  },
+  "elapsed_ms": 164
+}

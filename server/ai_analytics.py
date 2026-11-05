@@ -12,6 +12,7 @@ from server.db import query
 from server.question_checks import QuestionMismatch, calendar_mentions, question_text, relative_period, validate_question
 from server.ratios import comparison_answer, share_result
 from server.monthly import local_monthly_plan, monthly_result
+from server.compound import execute_compound, local_compound_plan
 
 
 def outcome(reason: str, lang='ru', kind='no_data'):
@@ -28,6 +29,7 @@ def outcome(reason: str, lang='ru', kind='no_data'):
         'share_definition': ('Для доли нужны часть и общий итог в одинаковых условиях. Например: доля экспорта по сумме всех сделок или по их числу. Эти показатели можно показать вместе.', 'Ulush uchun bir xil shartlardagi qism va jami kerak. Masalan, eksportning jami summa yoki bitimlar sonidagi ulushi. Ikkalasini birga ko‘rsatish mumkin.'),
         'share_currency': ('Доля по сумме разно­валютных сделок рассчитывается после приведения всех сумм к UZS по датам сделок. Для доли по числу сделок валюта не требуется.', 'Turli valyutadagi bitimlarning summa ulushi barcha summalar bitim sanasidagi kurs bilan UZSga o‘tkazilgach hisoblanadi. Bitimlar sonidagi ulush uchun valyuta kerak emas.'),
     }
+    texts['compound_scope']=('Части вопроса относятся к разным выборкам. Сейчас несколько операций выполняются с общим периодом и фильтрами. Для разных условий задайте отдельные вопросы; объединять их в один общий итог было бы неверно.', 'Savol qismlari turli tanlanmalarga tegishli. Hozir bir nechta amal umumiy davr va filtrlar bilan bajariladi. Turli shartlar uchun alohida savollar bering; ularni bitta jami natijaga qo‘shish noto‘g‘ri bo‘ladi.')
     ru, uz = texts.get(reason, texts['unknown'])
     return {'status': kind, 'answer': uz if lang == 'uz' else ru, 'columns': [], 'rows': [], 'provenance': None, 'reason': reason}
 
@@ -44,10 +46,12 @@ def constrain_request(request: AIQuestion, plan: QueryPlan):
     if plan.company_name and normalize(plan.company_name) not in context:
         raise QuestionMismatch('company_not_supplied')
     if plan.action == 'query':
-        exact_plan = local_monthly_plan(request) or local_ratio_plan(request) or local_chronology_plan(request) or local_count_plan(request)
+        exact_plan = local_compound_plan(request) or local_monthly_plan(request) or local_ratio_plan(request)
+        if not exact_plan and not plan.additional_metrics:
+            exact_plan=local_chronology_plan(request) or local_count_plan(request)
         if exact_plan:
             plan = exact_plan
-        elif metric := chronological_metric(q):
+        elif not plan.additional_metrics and (metric := chronological_metric(q)):
             plan.metric = metric
             plan.order = 'asc' if metric == 'first_deal' else 'desc'
             plan.limit = 1
@@ -185,6 +189,8 @@ def execute_plan(plan: QueryPlan, request: AIQuestion):
     uz = lang == 'uz'
     if plan.action != 'query':
         return outcome(plan.reason if plan.reason in ['ambiguous_entity', 'need_product'] else 'unknown', lang, 'clarify')
+    if plan.additional_metrics:
+        return execute_compound(plan,request)
     if plan.metric in ['participant','broker','contract']:
         return reference_result(plan,lang)
     last = date(2026, 10, 31) if plan.metric == 'rate' else date.fromisoformat(SNAPSHOT)

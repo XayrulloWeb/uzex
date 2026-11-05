@@ -118,6 +118,7 @@
   "plan": {
     "action": "query",
     "metric": "amount",
+    "additional_metrics": [],
     "share_target": null,
     "share_basis": "both",
     "comparison": true,
@@ -161,5 +162,5 @@
     "attempts": 0,
     "used_backup": false
   },
-  "elapsed_ms": 84
+  "elapsed_ms": 73
 }
