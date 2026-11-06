@@ -14,6 +14,7 @@ from server.monthly import local_monthly_plan
 from server.compound import local_compound_plan, requested_metrics, shared_scope
 from server.audit_log import get_recent_questions, log_question
 from server.analysis_reports import analysis_intent, local_analysis_plan
+from server.export_deep_report import generate_export_deep_report, is_export_deep_query
 
 router=APIRouter(prefix='/api/ai',tags=['AI analyst'])
 
@@ -73,6 +74,11 @@ async def ask(request: AIQuestion, raw_request: Request = None):
         return _finish(response)
     try:
         async with asyncio.timeout(80):
+            if is_export_deep_query(request.question):
+                deep_resp = await asyncio.to_thread(generate_export_deep_report, request)
+                if deep_resp:
+                    deep_resp['elapsed_ms'] = round((time.monotonic()-started)*1000)
+                    return _finish(deep_resp)
             trusted=local_analysis_plan(request) or local_compound_plan(request) or local_monthly_plan(request) or local_ratio_plan(request)
             if trusted:
                 plan=constrain_request(request,trusted)
