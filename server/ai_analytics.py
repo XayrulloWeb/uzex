@@ -7,9 +7,9 @@ from decimal import Decimal
 from functools import lru_cache
 
 from server.ai_models import AIQuestion, QueryPlan, chronological_metric, explicit_years, local_chronology_plan, local_count_plan, local_ratio_plan, money
-from server.catalog import CANCELLED, SNAPSHOT, commodity_label, normalize, region_label
+from server.catalog import CANCELLED, REGIONS, SNAPSHOT, commodity_label, normalize, region_label
 from server.db import query
-from server.question_checks import QuestionMismatch, calendar_mentions, question_text, relative_period, validate_question
+from server.question_checks import QuestionMismatch, _mentions, calendar_mentions, question_text, relative_period, validate_question
 from server.ratios import comparison_answer, share_result
 from server.monthly import local_monthly_plan, monthly_result
 from server.compound import execute_compound, local_compound_plan
@@ -289,6 +289,14 @@ def execute_plan(plan: QueryPlan, request: AIQuestion):
     condition = ' AND '.join(conditions)
     total = query(f'SELECT count(*) AS count,min({plan.date_field}) AS first_date,max({plan.date_field}) AS last_date FROM trades WHERE '+condition, parameters)[0]
     if total['count']==0 and not plan.month_comparison and (plan.metric!='count' or plan.deal_id or plan.contract_id or plan.brand or plan.product_text):
+        if plan.region and getattr(request, 'scope', None) and request.scope.region == plan.region and plan.region not in _mentions(question_text(request.question), REGIONS):
+            reg_name = region_label(plan.region, lang)
+            nat_plan = plan.model_copy(update={'region': None})
+            res = execute_plan(nat_plan, request)
+            if res.get('status') == 'answer':
+                prefix = f"По выбранному на карте региону ({reg_name}) сделок нет (0). В целом по Узбекистану:\n" if lang == 'ru' else f"Xaritada tanlangan hudud ({reg_name}) bo‘yicha bitimlar yo‘q (0 ta). Butun O‘zbekiston bo‘yicha:\n"
+                res['answer'] = prefix + res['answer']
+                return res
         return outcome('not_found',lang)
     if plan.analysis:return analysis_result(plan,lang,condition,parameters,amount,quantity,unit,total)
     if plan.month_comparison: return monthly_result(plan,lang,condition,parameters,amount,total)

@@ -16,6 +16,7 @@ from server.audit_log import get_recent_questions, log_question
 from server.analysis_reports import analysis_intent, local_analysis_plan
 from server.export_deep_report import generate_export_deep_report, is_export_deep_query
 from server.deep_reports import generate_deep_report, is_deep_report_query
+from server.statistical_reports import generate_statistical_report, is_statistical_query
 
 router=APIRouter(prefix='/api/ai',tags=['AI analyst'])
 
@@ -82,6 +83,11 @@ async def ask(request: AIQuestion, raw_request: Request = None):
                 response['provider']={'kind':'local','model':'verified-analysis' if plan.analysis else 'verified-compound' if plan.additional_metrics else 'verified-monthly-report' if plan.month_comparison else 'verified-ratio' if plan.metric=='share' else 'verified-comparison','attempts':0,'used_backup':False}
                 response['elapsed_ms']=round((time.monotonic()-started)*1000)
                 return _finish(response)
+            if is_statistical_query(request.question):
+                stat_resp = await asyncio.to_thread(generate_statistical_report, request)
+                if stat_resp:
+                    stat_resp['elapsed_ms'] = round((time.monotonic()-started)*1000)
+                    return _finish(stat_resp)
             if is_export_deep_query(request.question):
                 deep_resp = await asyncio.to_thread(generate_export_deep_report, request)
                 if deep_resp:
