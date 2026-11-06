@@ -222,7 +222,7 @@ def execute_plan(plan: QueryPlan, request: AIQuestion):
             fact = f"Курс на {date_text(row['rate_date'])}: 1 USD = {money(row['usd_rate'])} UZS." if not uz else f"{date_text(row['rate_date'])} sanasidagi kurs: 1 USD = {money(row['usd_rate'])} UZS."
             answer = fact+' '+answer
         return result(answer, rows, [column('rate_date',lang), column('usd_rate',lang,'decimal')], sql, parameters, len(rows), plan, lang=lang)
-    if plan.metric in ['weighted_price', 'min_price', 'max_price'] and not (plan.commodity or plan.contract_id or plan.product_text):
+    if plan.metric in ['weighted_price', 'min_price', 'max_price'] and not (plan.commodity or plan.contract_id or plan.product_text or plan.deal_id):
         return outcome('need_product', lang, 'clarify')
 
     conditions, parameters = ['TRUE'], []
